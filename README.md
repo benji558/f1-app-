@@ -14,7 +14,7 @@ Web app for **EA SPORTS F1 25** car setups: edit the same sliders as in-game, lo
 | **Matt212 baselines** | Per-track starting points aligned with [@matt212racing](https://www.youtube.com/@matt212racing) public F1 25 setup sheet / *Updated* guides (in-app notes cite the source). |
 | **My setups** | Save named setups per track; load or delete them. Data lives in the **browser** (`localStorage`). |
 | **Export / import** | Download a JSON backup (`f125-setups-backup.json`) or import one. Restores merges **and** overwrites matching keys so re-importing a backup works as expected. |
-| **Bundled defaults** | Optional `bundled-setups.json` or `f125-setups-backup.json` in the project folder: on load, any missing `f125_*` keys are merged into the browser (good for sharing a team baseline). API keys are never stored in these files. |
+| **Bundled defaults** | Commit includes `bundled-setups.json` (empty `data` by default). On load, the app also tries `f125-setups-backup.json` if you add an export next to `server.js` — missing `f125_*` keys merge in. API keys are never in these files. |
 | **Lap tracker** | Session/lap logging stored under `f125_lt_sessions` in `localStorage` (included in export backup). |
 | **AI setup tuner** | Describe handling problems in plain language; the app sends your current setup + context to **Claude** and applies returned slider changes when the response is valid JSON. |
 
@@ -86,8 +86,8 @@ Optional environment variables (or entries in `.env`):
 |------|------|
 | `server.js` | Express static server, `/api/ai-setup` proxy to Anthropic (uses caller’s `apiKey` in JSON body) |
 | `f1_setup_manager.html` | Single-page UI (HTML + CSS + JS) |
-| `bundled-setups.json` | Optional shared backup shape: `{ "data": { "f125_…": "…" } }` |
-| `f125-setups-backup.json` | Same idea; both filenames are fetched on load for merge |
+| `bundled-setups.json` | Optional seed data: `{ "data": { "f125_…": "…" } }` (tracked; empty by default) |
+| `f125-setups-backup.json` | Not in the repo — you can add an **Export** file with this name beside `server.js`; it is loaded on top of `bundled-setups.json` if present |
 | `manifest.json` | PWA metadata |
 | `icon-192.png`, `icon-512.png` | Icons |
 
