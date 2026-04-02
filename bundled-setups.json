@@ -1,0 +1,4 @@
+{
+  "_readme": "1) In the app open MY SETUPS → EXPORT. 2) Paste backup into \"data\" below (or replace this file with the export). 3) Restart the server. On first visit, missing keys merge into browser storage. Your API key is never in this file.",
+  "data": {}
+}

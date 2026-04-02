@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>F1 25 Setup Manager</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #e10600; --red-dark: #9b0400; --bg: #0a0a0a;
+    --surface: #111111; --surface2: #1a1a1a; --surface3: #222222;
+    --border: #2a2a2a; --text: #f0f0f0; --muted: #777; --gold: #c9a84c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 16px; min-height: 100vh; overflow-x: hidden; }
+  header { background: var(--surface); border-bottom: 2px solid var(--red); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'Orbitron', monospace; font-weight: 900; font-size: 1.1rem; letter-spacing: 2px; color: var(--red); }
+  .logo span { color: var(--text); }
+  .track-bar { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .track-bar label { font-family: 'Orbitron', monospace; font-size: 0.6rem; letter-spacing: 2px; color: var(--muted); }
+  select, .setup-name-input { background: var(--surface3); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600; flex: 1; }
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='%23e10600'%3E%3Cpath d='M0 0l6 8 6-8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; min-width: 180px; }
+  select:focus, .setup-name-input:focus { outline: none; border-color: var(--red); }
+  .setup-name-input { min-width: 140px; }
+  .setup-name-input::placeholder { color: var(--muted); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: 4px; font-family: 'Orbitron', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .btn-primary { background: var(--red); color: #fff; }
+  .btn-primary:hover { background: #ff1a14; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface3); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--red); color: var(--red); }
+  .btn-gold { background: var(--gold); color: #111; font-weight: 700; }
+  .btn-gold:hover { background: #e0bc5a; }
+  .btn-danger { background: transparent; color: #e10600; border: 1px solid #e10600; }
+  .btn-danger:hover { background: #e10600; color: #fff; }
+  .saved-panel { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px; display: none; }
+  .saved-panel.open { display: block; }
+  .saved-panel h3 { font-family: 'Orbitron', monospace; font-size: 0.6rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 10px; }
+  .saved-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+  .saved-item { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; gap: 8px; }
+  .saved-item-info { flex: 1; min-width: 0; }
+  .saved-item-name { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .saved-item-track { font-size: 0.75rem; color: var(--muted); }
+  .saved-item-actions { display: flex; gap: 6px; }
+  .community-badge { display: inline-block; background: var(--gold); color: #111; font-family: 'Orbitron', monospace; font-size: 0.5rem; font-weight: 700; letter-spacing: 1px; padding: 2px 6px; border-radius: 3px; margin-left: 6px; }
+  main { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .section-header { background: var(--surface2); padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+  .section-icon { width: 28px; height: 28px; background: var(--red); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+  .section-title { font-family: 'Orbitron', monospace; font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; flex: 1; }
+  .section-chevron { color: var(--muted); font-size: 0.7rem; transition: transform 0.2s; }
+  .section.collapsed .section-chevron { transform: rotate(-90deg); }
+  .section.collapsed .section-body { display: none; }
+  .section-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .param-row { display: flex; flex-direction: column; gap: 6px; }
+  .param-label { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .param-value { font-family: 'Orbitron', monospace; font-size: 0.9rem; font-weight: 700; color: var(--red); min-width: 52px; text-align: right; }
+  .param-slider { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 2px; background: var(--border); outline: none; }
+  .param-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--red); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 8px rgba(225,6,0,0.5); }
+  .param-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--red); cursor: pointer; border: 2px solid var(--bg); }
+  .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .action-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  .track-info { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--gold); border-radius: 8px; padding: 12px 16px; display: none; }
+  .track-info.visible { display: block; }
+  .track-info-title { font-family: 'Orbitron', monospace; font-size: 0.6rem; letter-spacing: 2px; color: var(--gold); margin-bottom: 4px; }
+  .track-info-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--red); border-radius: 6px; padding: 10px 20px; font-family: 'Orbitron', monospace; font-size: 0.65rem; letter-spacing: 1.5px; color: var(--red); z-index: 999; transition: transform 0.3s ease; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  footer { text-align: center; padding: 20px; color: var(--muted); font-size: 0.75rem; letter-spacing: 1px; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--red-dark); border-radius: 2px; }
+
+  /* AI TUNER */
+  .ai-section { background: var(--surface); border: 1px solid var(--red); border-radius: 8px; overflow: hidden; }
+  .ai-header { background: linear-gradient(90deg, #1a0000, #1a1a1a); padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+  .ai-icon { width: 28px; height: 28px; background: var(--red); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+  .ai-title { font-family: 'Orbitron', monospace; font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; flex: 1; }
+  .ai-badge { background: var(--red); color: #fff; font-family: 'Orbitron', monospace; font-size: 0.45rem; font-weight: 700; letter-spacing: 1px; padding: 2px 6px; border-radius: 3px; }
+  .ai-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .ai-messages { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; min-height: 0; }
+  .ai-messages:empty::after { content: 'Describe what you want — e.g. "faster corner entry", "more rear stability", "better traction out of slow corners"'; color: var(--muted); font-size: 0.82rem; line-height: 1.5; display: block; padding: 4px 0; }
+  .msg { padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; line-height: 1.5; }
+  .msg-user { background: var(--surface3); border: 1px solid var(--border); color: var(--text); align-self: flex-end; max-width: 85%; border-radius: 6px 6px 2px 6px; }
+  .msg-ai { background: #1a0a0a; border: 1px solid #3a1010; color: var(--text); align-self: flex-start; max-width: 95%; border-radius: 6px 6px 6px 2px; }
+  .msg-ai strong { color: var(--gold); font-family: 'Orbitron', monospace; font-size: 0.7rem; letter-spacing: 1px; display: block; margin-bottom: 4px; }
+  .ai-input-row { display: flex; gap: 8px; align-items: flex-end; }
+  .ai-input { background: var(--surface3); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600; flex: 1; resize: none; min-height: 44px; max-height: 100px; line-height: 1.4; }
+  .ai-input::placeholder { color: var(--muted); }
+  .ai-input:focus { outline: none; border-color: var(--red); }
+  .ai-send { background: var(--red); color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-size: 1.1rem; cursor: pointer; transition: background 0.15s; flex-shrink: 0; height: 44px; }
+  .ai-send:hover { background: #ff1a14; }
+  .ai-send:disabled { background: var(--border); cursor: not-allowed; }
+  .ai-thinking { color: var(--muted); font-size: 0.78rem; font-family: 'Orbitron', monospace; letter-spacing: 1px; animation: pulse 1.2s infinite; display: none; }
+  .ai-thinking.show { display: block; }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+  .changes-list { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .change-pill { background: var(--surface3); border: 1px solid var(--border); border-radius: 12px; padding: 2px 8px; font-family: 'Orbitron', monospace; font-size: 0.55rem; color: var(--gold); letter-spacing: 0.5px; }
+  .ai-mode-bar { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); font-family: 'Orbitron', monospace; font-size: 0.55rem; font-weight: 700; letter-spacing: 1px; }
+  .ai-mode-bar label { flex: 1; text-align: center; padding: 8px 10px; cursor: pointer; background: var(--surface3); color: var(--muted); transition: background 0.15s, color 0.15s; }
+  .ai-mode-bar label:has(input:checked) { background: var(--red); color: #fff; }
+  .ai-mode-bar input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .ai-mode-hint { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+
+  /* LAP TRACKER */
+  .lt-section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .lt-header { background: var(--surface2); padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+  .lt-icon { width: 28px; height: 28px; background: var(--gold); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+  .lt-title { font-family: 'Orbitron', monospace; font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; flex: 1; color: var(--text); }
+  .lt-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* Session selector */
+  .lt-session-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .lt-session-select { background: var(--surface3); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px; font-family: 'Rajdhani', sans-serif; font-size: 0.88rem; font-weight: 600; flex: 1; min-width: 140px; }
+  .lt-session-select:focus { outline: none; border-color: var(--gold); }
+  .lt-new-session { background: var(--gold); color: #111; border: none; border-radius: 4px; padding: 7px 14px; font-family: 'Orbitron', monospace; font-size: 0.58rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; white-space: nowrap; }
+  .lt-new-session:hover { background: #e0bc5a; }
+
+  /* Lap entry form */
+  .lt-form { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .lt-form-title { font-family: 'Orbitron', monospace; font-size: 0.6rem; letter-spacing: 2px; color: var(--muted); }
+  .lt-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .lt-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .lt-field { display: flex; flex-direction: column; gap: 4px; }
+  .lt-label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .lt-input { background: var(--surface3); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600; width: 100%; }
+  .lt-input:focus { outline: none; border-color: var(--gold); }
+  .lt-input::placeholder { color: var(--muted); }
+  .lt-select { background: var(--surface3); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px; font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; font-weight: 600; width: 100%; appearance: none; }
+  .lt-select:focus { outline: none; border-color: var(--gold); }
+  .lt-add-btn { background: var(--red); color: #fff; border: none; border-radius: 4px; padding: 9px; font-family: 'Orbitron', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; cursor: pointer; width: 100%; transition: background 0.15s; }
+  .lt-add-btn:hover { background: #ff1a14; }
+
+  /* Laps table */
+  .lt-table-wrap { overflow-x: auto; }
+  .lt-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .lt-table th { font-family: 'Orbitron', monospace; font-size: 0.52rem; letter-spacing: 1px; color: var(--muted); padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .lt-table td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .lt-table tr:last-child td { border-bottom: none; }
+  .lt-table tr.best-lap td { background: #0d1f0d; }
+  .lt-lapnum { font-family: 'Orbitron', monospace; font-size: 0.7rem; color: var(--muted); }
+  .lt-time { font-family: 'Orbitron', monospace; font-size: 0.85rem; font-weight: 700; color: var(--text); }
+  .lt-time.best { color: #4caf50; }
+  .lt-sector { font-family: 'Orbitron', monospace; font-size: 0.7rem; color: var(--muted); }
+  .lt-sector.best-s { color: #9c27b0; }
+  .compound-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; flex-shrink: 0; }
+  .lt-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 2px 4px; }
+  .lt-del:hover { color: var(--red); }
+  .lt-empty { text-align: center; color: var(--muted); font-size: 0.82rem; padding: 16px 0; }
+
+  /* Stats bar */
+  .lt-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .lt-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; text-align: center; }
+  .lt-stat-label { font-family: 'Orbitron', monospace; font-size: 0.5rem; letter-spacing: 1px; color: var(--muted); margin-bottom: 2px; }
+  .lt-stat-value { font-family: 'Orbitron', monospace; font-size: 0.82rem; font-weight: 700; color: var(--gold); }
+
+  /* Session modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; }
+  .modal-title { font-family: 'Orbitron', monospace; font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; color: var(--gold); }
+  .modal-field { display: flex; flex-direction: column; gap: 4px; }
+  .modal-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .modal-input { background: var(--surface3); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 9px 12px; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600; width: 100%; }
+  .modal-input:focus { outline: none; border-color: var(--gold); }
+  .modal-actions { display: flex; gap: 8px; }
+  .modal-ok { flex: 1; background: var(--gold); color: #111; border: none; border-radius: 4px; padding: 10px; font-family: 'Orbitron', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; }
+  .modal-ok:hover { background: #e0bc5a; }
+  .modal-cancel { background: var(--surface3); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 10px 16px; font-family: 'Orbitron', monospace; font-size: 0.62rem; cursor: pointer; }
+  .api-key-bar { font-size: 0.78rem; color: var(--muted); line-height: 1.45; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; }
+  .api-key-bar button { background: none; border: none; color: var(--gold); font-family: 'Orbitron', monospace; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; padding: 0; text-decoration: underline; }
+  .api-key-bar button:hover { color: #e0bc5a; }
+  .modal-hint { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+  .modal-hint a { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">F1 <span>25</span> SETUP MGR</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center">
+    <button type="button" class="btn btn-secondary" onclick="exportSetupsBackup()">⬇ EXPORT</button>
+    <label class="btn btn-secondary" style="cursor:pointer;margin:0;display:inline-flex;align-items:center">⬆ IMPORT
+      <input type="file" accept="application/json,.json" style="display:none" onchange="importSetupsBackup(event)">
+    </label>
+    <button type="button" class="btn btn-secondary" onclick="openApiKeyModal()">🔑 API KEY</button>
+    <button type="button" class="btn btn-secondary" onclick="toggleSaved()">📂 MY SETUPS</button>
+  </div>
+</header>
+
+<div class="saved-panel" id="savedPanel">
+  <h3>SAVED SETUPS</h3>
+  <p style="font-size:0.72rem;color:var(--muted);margin:0 0 10px;line-height:1.4">Use <strong style="color:var(--text)">EXPORT / IMPORT</strong> in the top bar. Optional: place <code style="color:var(--gold)">f125-setups-backup.json</code> or <code style="color:var(--gold)">bundled-setups.json</code> next to <code style="color:var(--gold)">server.js</code> — missing keys merge on load.</p>
+  <div class="saved-list" id="savedList"></div>
+</div>
+
+<div class="track-bar">
+  <label>TRACK</label>
+  <select id="trackSelect" onchange="onTrackChange()">
+    <option value="">— Select Track —</option>
+    <!-- 2026 F1 Calendar Order -->
+    <option value="australia">R1 · Australia — Melbourne</option>
+    <option value="china">R2 · China — Shanghai</option>
+    <option value="japan">R3 · Japan — Suzuka</option>
+    <option value="bahrain">R4 · Bahrain — Sakhir</option>
+    <option value="jeddah">R5 · Saudi Arabia — Jeddah</option>
+    <option value="miami">R6 · Miami — Hard Rock Stadium</option>
+    <option value="imola">R7 · Emilia Romagna — Imola</option>
+    <option value="monaco">R8 · Monaco — Monte Carlo</option>
+    <option value="canada">R9 · Canada — Montreal</option>
+    <option value="spain">R10 · Spain — Barcelona</option>
+    <option value="austria">R11 · Austria — Spielberg</option>
+    <option value="silverstone">R12 · Great Britain — Silverstone</option>
+    <option value="hungary">R13 · Hungary — Budapest</option>
+    <option value="spa">R14 · Belgium — Spa</option>
+    <option value="zandvoort">R15 · Netherlands — Zandvoort</option>
+    <option value="monza">R16 · Italy — Monza</option>
+    <option value="madrid">R17 · Spain — Madrid</option>
+    <option value="baku">R18 · Azerbaijan — Baku</option>
+    <option value="singapore">R19 · Singapore — Marina Bay</option>
+    <option value="cota">R20 · USA — Austin (COTA)</option>
+    <option value="mexico">R21 · Mexico — Mexico City</option>
+    <option value="brazil">R22 · Brazil — São Paulo</option>
+    <option value="lasvegas">R23 · USA — Las Vegas</option>
+    <option value="qatar">R24 · Qatar — Lusail</option>
+    <option value="abudhabi">R25 · Abu Dhabi — Yas Marina</option>
+    <optgroup label="Reverse layouts (Matt212 sheet)">
+      <option value="austria_reverse">Austria — Spielberg (Reverse)</option>
+      <option value="silverstone_reverse">Great Britain — Silverstone (Reverse)</option>
+      <option value="zandvoort_reverse">Netherlands — Zandvoort (Reverse)</option>
+    </optgroup>
+  </select>
+  <input class="setup-name-input" id="setupName" placeholder="Setup name..." maxlength="30"/>
+</div>
+
+<main>
+
+  <div class="track-info" id="trackInfo">
+    <div class="track-info-title">TRACK NOTES <span class="community-badge">MATT212 BASELINE</span></div>
+    <div class="track-info-desc" id="trackInfoDesc"></div>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn btn-gold" onclick="loadCommunitySetup()">⬇ RELOAD MATT212 BASELINE</button>
+    <button class="btn btn-primary" onclick="saveSetup()">💾 SAVE</button>
+    <button class="btn btn-secondary" onclick="resetSetup()">↺ RESET</button>
+  </div>
+
+  <div class="section" id="sec-aero">
+    <div class="section-header" onclick="toggleSection('sec-aero')">
+      <div class="section-icon">🏎</div>
+      <div class="section-title">AERODYNAMICS</div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+      <div class="param-grid">
+        <div class="param-row">
+          <div class="param-label">Front Wing <span class="param-value" id="v-fw">20</span></div>
+          <input type="range" class="param-slider" id="s-fw" min="0" max="50" value="20" oninput="upd('fw',this.value)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Rear Wing <span class="param-value" id="v-rw">22</span></div>
+          <input type="range" class="param-slider" id="s-rw" min="0" max="50" value="22" oninput="upd('rw',this.value)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-trans">
+    <div class="section-header" onclick="toggleSection('sec-trans')">
+      <div class="section-icon">⚙️</div>
+      <div class="section-title">TRANSMISSION</div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+      <div class="param-row">
+        <div class="param-label">On Throttle Diff <span class="param-value" id="v-otd">75%</span></div>
+        <input type="range" class="param-slider" id="s-otd" min="50" max="100" value="75" oninput="updPct('otd',this.value)">
+      </div>
+      <div class="param-row">
+        <div class="param-label">Off Throttle Diff <span class="param-value" id="v-ffd">40%</span></div>
+        <input type="range" class="param-slider" id="s-ffd" min="10" max="100" value="40" oninput="updPct('ffd',this.value)">
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-geo">
+    <div class="section-header" onclick="toggleSection('sec-geo')">
+      <div class="section-icon">📐</div>
+      <div class="section-title">SUSPENSION GEOMETRY</div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+      <div class="param-grid">
+        <div class="param-row">
+          <div class="param-label">Front Camber <span class="param-value" id="v-fca">-3.50°</span></div>
+          <input type="range" class="param-slider" id="s-fca" min="-350" max="-100" value="-350" oninput="updDeg('fca',this.value,100)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Rear Camber <span class="param-value" id="v-rca">-2.00°</span></div>
+          <input type="range" class="param-slider" id="s-rca" min="-200" max="-10" value="-200" oninput="updDeg('rca',this.value,100)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Front Toe <span class="param-value" id="v-fte">0.00°</span></div>
+          <input type="range" class="param-slider" id="s-fte" min="0" max="50" value="0" oninput="updDeg('fte',this.value,100)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Rear Toe <span class="param-value" id="v-rte">0.10°</span></div>
+          <input type="range" class="param-slider" id="s-rte" min="0" max="50" value="10" oninput="updDeg('rte',this.value,100)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-susp">
+    <div class="section-header" onclick="toggleSection('sec-susp')">
+      <div class="section-icon">🔩</div>
+      <div class="section-title">SUSPENSION</div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+      <div class="param-grid">
+        <div class="param-row">
+          <div class="param-label">Front Susp <span class="param-value" id="v-fs">41</span></div>
+          <input type="range" class="param-slider" id="s-fs" min="1" max="50" value="41" oninput="upd('fs',this.value)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Rear Susp <span class="param-value" id="v-rs">1</span></div>
+          <input type="range" class="param-slider" id="s-rs" min="1" max="50" value="1" oninput="upd('rs',this.value)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Front ARB <span class="param-value" id="v-far">9</span></div>
+          <input type="range" class="param-slider" id="s-far" min="1" max="50" value="9" oninput="upd('far',this.value)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Rear ARB <span class="param-value" id="v-rar">21</span></div>
+          <input type="range" class="param-slider" id="s-rar" min="1" max="50" value="21" oninput="upd('rar',this.value)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Front RH <span class="param-value" id="v-frh">20</span></div>
+          <input type="range" class="param-slider" id="s-frh" min="10" max="60" value="20" oninput="upd('frh',this.value)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Rear RH <span class="param-value" id="v-rrh">46</span></div>
+          <input type="range" class="param-slider" id="s-rrh" min="20" max="80" value="46" oninput="upd('rrh',this.value)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-brk">
+    <div class="section-header" onclick="toggleSection('sec-brk')">
+      <div class="section-icon">🛑</div>
+      <div class="section-title">BRAKES</div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+      <div class="param-row">
+        <div class="param-label">Brake Pressure <span class="param-value" id="v-bp">100%</span></div>
+        <input type="range" class="param-slider" id="s-bp" min="50" max="100" value="100" oninput="updPct('bp',this.value)">
+      </div>
+      <div class="param-row">
+        <div class="param-label">Brake Bias <span class="param-value" id="v-bb">55%</span></div>
+        <input type="range" class="param-slider" id="s-bb" min="50" max="70" value="55" oninput="updPct('bb',this.value)">
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-tyre">
+    <div class="section-header" onclick="toggleSection('sec-tyre')">
+      <div class="section-icon">🔵</div>
+      <div class="section-title">TYRES</div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+      <div class="param-grid">
+        <div class="param-row">
+          <div class="param-label">Front Left <span class="param-value" id="v-fl">28.5</span></div>
+          <input type="range" class="param-slider" id="s-fl" min="200" max="300" value="285" oninput="updPsi('fl',this.value)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Front Right <span class="param-value" id="v-fr">28.5</span></div>
+          <input type="range" class="param-slider" id="s-fr" min="200" max="300" value="285" oninput="updPsi('fr',this.value)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Rear Left <span class="param-value" id="v-rl">26.5</span></div>
+          <input type="range" class="param-slider" id="s-rl" min="190" max="300" value="265" oninput="updPsi('rl',this.value)">
+        </div>
+        <div class="param-row">
+          <div class="param-label">Rear Right <span class="param-value" id="v-rr">26.5</span></div>
+          <input type="range" class="param-slider" id="s-rr" min="190" max="300" value="265" oninput="updPsi('rr',this.value)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAP TIME TRACKER -->
+  <div class="lt-section">
+    <div class="lt-header" onclick="toggleSection('lt-sec')">
+      <div class="lt-icon">⏱</div>
+      <div class="lt-title">LAP TIME TRACKER</div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body" id="lt-sec">
+
+      <!-- Session bar -->
+      <div class="lt-session-bar">
+        <select class="lt-session-select" id="ltSessionSelect" onchange="ltLoadSession()">
+          <option value="">— Select Session —</option>
+        </select>
+        <button class="lt-new-session" onclick="ltOpenModal()">+ NEW SESSION</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="lt-stats" id="ltStats" style="display:none">
+        <div class="lt-stat"><div class="lt-stat-label">BEST LAP</div><div class="lt-stat-value" id="ltBest">—</div></div>
+        <div class="lt-stat"><div class="lt-stat-label">AVG LAP</div><div class="lt-stat-value" id="ltAvg">—</div></div>
+        <div class="lt-stat"><div class="lt-stat-label">LAPS</div><div class="lt-stat-value" id="ltCount">0</div></div>
+      </div>
+
+      <!-- Add lap form -->
+      <div class="lt-form" id="ltForm" style="display:none">
+        <div class="lt-form-title">ADD LAP</div>
+        <div class="lt-form-row">
+          <div class="lt-field">
+            <div class="lt-label">Lap Time (m:ss.mmm)</div>
+            <input class="lt-input" id="ltLapTime" placeholder="1:32.456" maxlength="10">
+          </div>
+          <div class="lt-field">
+            <div class="lt-label">Tyre Compound</div>
+            <select class="lt-select" id="ltCompound">
+              <option value="soft">🔴 Soft</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="hard">⚪ Hard</option>
+              <option value="inter">🟢 Inter</option>
+              <option value="wet">🔵 Wet</option>
+            </select>
+          </div>
+        </div>
+        <div class="lt-form-row-3">
+          <div class="lt-field">
+            <div class="lt-label">S1 Time</div>
+            <input class="lt-input" id="ltS1" placeholder="28.123" maxlength="8">
+          </div>
+          <div class="lt-field">
+            <div class="lt-label">S2 Time</div>
+            <input class="lt-input" id="ltS2" placeholder="31.456" maxlength="8">
+          </div>
+          <div class="lt-field">
+            <div class="lt-label">S3 Time</div>
+            <input class="lt-input" id="ltS3" placeholder="32.877" maxlength="8">
+          </div>
+        </div>
+        <button class="lt-add-btn" onclick="ltAddLap()">+ ADD LAP</button>
+      </div>
+
+      <!-- Laps table -->
+      <div class="lt-table-wrap" id="ltTableWrap" style="display:none">
+        <table class="lt-table">
+          <thead>
+            <tr>
+              <th>LAP</th>
+              <th>TIME</th>
+              <th>S1</th>
+              <th>S2</th>
+              <th>S3</th>
+              <th>TYRE</th>
+              <th>SETUP</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ltTableBody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- AI TUNER -->
+  <div class="ai-section">
+    <div class="ai-header">
+      <div class="ai-icon">🤖</div>
+      <div class="ai-title">AI SETUP TUNER</div>
+      <div class="ai-badge">POWERED BY CLAUDE</div>
+    </div>
+    <div class="ai-body">
+      <div class="api-key-bar" id="apiKeyBar">Checking API key…</div>
+      <div class="ai-mode-bar" role="group" aria-label="AI mode">
+        <label><input type="radio" name="aiMode" value="ask" onchange="aiOnModeChange()"> ASK</label>
+        <label><input type="radio" name="aiMode" value="setup" checked onchange="aiOnModeChange()"> CHANGE SETUP</label>
+      </div>
+      <p class="ai-mode-hint" id="aiModeHint">Change setup: sends your message and moves sliders. Ask: questions only — no slider changes.</p>
+      <div class="ai-messages" id="aiMessages"></div>
+      <div class="ai-thinking" id="aiThinking">UPDATING SETUP...</div>
+      <div class="ai-input-row">
+        <textarea class="ai-input" id="aiInput" placeholder='e.g. "more grip in slow corners" — sliders update' rows="3" onkeydown="aiKeydown(event)"></textarea>
+        <button class="ai-send" id="aiSend" onclick="sendAiRequest()">➤</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+<footer>F1 25 SETUP MANAGER · PER-TRACK BASELINES FROM MATT212 (YOUTUBE.COM/@MATT212RACING + PUBLIC F1 25 SETUP SHEET)</footer>
+
+<!-- New Session Modal -->
+<div class="modal-overlay" id="ltModal">
+  <div class="modal">
+    <div class="modal-title">NEW SESSION</div>
+    <div class="modal-field">
+      <div class="modal-label">Session Name</div>
+      <input class="modal-input" id="ltModalName" placeholder="e.g. Bahrain Race, Monaco Quali..." maxlength="40">
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Link Setup (optional)</div>
+      <select class="modal-input" id="ltModalSetup">
+        <option value="">— No setup linked —</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="ltCloseModal()">CANCEL</button>
+      <button class="modal-ok" onclick="ltCreateSession()">CREATE SESSION</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- API key modal -->
+<div class="modal-overlay" id="apiKeyModal" onclick="if(event.target===this)closeApiKeyModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">ANTHROPIC API KEY</div>
+    <p class="modal-hint">Used only from this browser / app to call Claude. Stored in local storage on this device. Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a></p>
+    <div class="modal-field">
+      <div class="modal-label">Secret key</div>
+      <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false">
+    </div>
+    <p class="modal-hint" id="apiKeyModalNote"></p>
+    <div class="modal-actions">
+      <button class="modal-cancel" type="button" onclick="closeApiKeyModal()">CANCEL</button>
+      <button class="modal-cancel" type="button" onclick="clearStoredApiKey()">REMOVE KEY</button>
+      <button class="modal-ok" type="button" onclick="saveApiKeyFromModal()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_ANTHROPIC_KEY = 'f125_anthropic_api_key';
+let serverEnvKeyConfigured = false;
+
+function getStoredApiKey(){
+  try { return (localStorage.getItem(LS_ANTHROPIC_KEY) || '').trim(); } catch (_) { return ''; }
+}
+
+function setStoredApiKey(v){
+  const t = String(v || '').trim();
+  if (!t) return;
+  localStorage.setItem(LS_ANTHROPIC_KEY, t);
+}
+
+function openApiKeyModal(){
+  document.getElementById('apiKeyModal').classList.add('open');
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiKeyModalNote').textContent = getStoredApiKey()
+    ? 'A key is already saved — paste a new one to replace it, or use Remove key.'
+    : '';
+  setTimeout(() => document.getElementById('apiKeyInput').focus(), 80);
+}
+
+function closeApiKeyModal(){
+  document.getElementById('apiKeyModal').classList.remove('open');
+}
+
+function saveApiKeyFromModal(){
+  const v = document.getElementById('apiKeyInput').value.trim();
+  if (!v) { showToast('PASTE YOUR API KEY'); return; }
+  if (!v.startsWith('sk-ant') && !confirm('This does not look like a typical Anthropic key (sk-ant…). Save anyway?')) return;
+  setStoredApiKey(v);
+  refreshApiKeyBar();
+  closeApiKeyModal();
+  showToast('API KEY SAVED');
+}
+
+function clearStoredApiKey(){
+  localStorage.removeItem(LS_ANTHROPIC_KEY);
+  refreshApiKeyBar();
+  closeApiKeyModal();
+  showToast('API KEY REMOVED');
+}
+
+async function refreshApiKeyBar(){
+  const bar = document.getElementById('apiKeyBar');
+  if (!bar) return;
+  try {
+    const r = await fetch('/api/ai-status');
+    const j = await r.json();
+    serverEnvKeyConfigured = !!j.envKeyConfigured;
+  } catch (_) { serverEnvKeyConfigured = false; }
+  const local = getStoredApiKey();
+  if (local) {
+    bar.innerHTML = 'AI: <span style="color:var(--gold);font-weight:700">key saved in this app</span> (overrides .env) · <button type="button" onclick="openApiKeyModal()">Change</button> · <button type="button" onclick="clearStoredApiKey()">Remove</button>';
+  } else if (serverEnvKeyConfigured) {
+    bar.innerHTML = 'AI: <span style="color:var(--muted)">using server .env</span> · <button type="button" onclick="openApiKeyModal()">Use my own key</button>';
+  } else {
+    bar.innerHTML = 'AI: <span style="color:var(--red)">no key</span> — configure below to use Claude. · <button type="button" onclick="openApiKeyModal()">Configure API key</button>';
+  }
+}
+
+/* Matt212 F1 25 baselines — values from his public setup sheet (same numbers as the *Updated* YouTube guides on youtube.com/@matt212racing). Sheet export: docs.google.com/spreadsheets/d/1mmFai7jDGYpZ2cc_PBk3PBrpUFgbjEzB7z-q5P2VlFE */
+const COMMUNITY = {
+  australia:  { note:"Matt212 baseline · Tyre strat: M→H, pit ~12–13. Source: @matt212racing F1 25 sheet + *Updated* Australia guide.", fw:18,rw:13,otd:100,ffd:40,fca:-350,rca:-200,fte:0,rte:10,fs:37,rs:5,far:4,rar:4,frh:21,rrh:47,bp:100,bb:55,fl:289,fr:289,rl:211,rr:211 },
+  china:      { note:"Matt212 baseline · M→H, pit ~12. China setup + hotlap / *Updated* race guide on his channel.", fw:34,rw:27,otd:100,ffd:30,fca:-340,rca:-190,fte:1,rte:12,fs:35,rs:3,far:4,rar:7,frh:23,rrh:49,bp:100,bb:55,fl:260,fr:260,rl:220,rr:220 },
+  japan:      { note:"Matt212 baseline · M→H, pit ~13. Japan setup + hotlap guide.", fw:30,rw:25,otd:100,ffd:35,fca:-350,rca:-200,fte:0,rte:10,fs:38,rs:4,far:6,rar:18,frh:23,rrh:49,bp:100,bb:55,fl:288,fr:288,rl:210,rr:210 },
+  bahrain:    { note:"Matt212 baseline · M→H, pit ~12. Bahrain track guide.", fw:32,rw:28,otd:100,ffd:30,fca:-350,rca:-200,fte:0,rte:10,fs:37,rs:10,far:9,rar:15,frh:22,rrh:49,bp:100,bb:55,fl:268,fr:268,rl:209,rr:209 },
+  jeddah:     { note:"Matt212 baseline · M→H, pit ~12. Saudi Arabia setup + track guide.", fw:13,rw:5,otd:100,ffd:20,fca:-350,rca:-200,fte:0,rte:10,fs:38,rs:7,far:4,rar:7,frh:20,rrh:46,bp:100,bb:55,fl:285,fr:285,rl:215,rr:215 },
+  miami:      { note:"Matt212 baseline · M→H, pit ~13. Miami *Updated* guide.", fw:18,rw:11,otd:100,ffd:25,fca:-350,rca:-200,fte:1,rte:10,fs:30,rs:4,far:5,rar:17,frh:23,rrh:48,bp:100,bb:55,fl:289,fr:289,rl:215,rr:215 },
+  imola:      { note:"Matt212 baseline · M→H, pit ~14. Emilia Romagna / Imola.", fw:38,rw:31,otd:100,ffd:25,fca:-350,rca:-200,fte:1,rte:12,fs:38,rs:5,far:9,rar:17,frh:23,rrh:52,bp:100,bb:55,fl:235,fr:235,rl:210,rr:210 },
+  monaco:     { note:"Matt212 baseline · M→M→H (pit on damage). Monaco setup + track guide.", fw:50,rw:48,otd:100,ffd:15,fca:-350,rca:-200,fte:0,rte:10,fs:38,rs:22,far:4,rar:19,frh:20,rrh:49,bp:100,bb:55,fl:225,fr:225,rl:205,rr:205 },
+  canada:     { note:"Matt212 baseline · M→H, pit ~15. Canada setup + track guide.", fw:30,rw:24,otd:100,ffd:20,fca:-350,rca:-200,fte:0,rte:10,fs:38,rs:5,far:4,rar:16,frh:20,rrh:46,bp:100,bb:55,fl:288,fr:288,rl:216,rr:216 },
+  spain:      { note:"Matt212 baseline · M→H, pit ~14. Spain / Barcelona.", fw:39,rw:32,otd:100,ffd:20,fca:-350,rca:-200,fte:0,rte:10,fs:36,rs:5,far:6,rar:18,frh:21,rrh:47,bp:100,bb:55,fl:295,fr:280,rl:220,rr:205 },
+  austria:    { note:"Matt212 baseline · M→H, pit ~16. Austria setup + track guide.", fw:43,rw:36,otd:100,ffd:25,fca:-350,rca:-200,fte:2,rte:11,fs:38,rs:4,far:5,rar:6,frh:22,rrh:48,bp:100,bb:55,fl:285,fr:285,rl:246,rr:246 },
+  silverstone:{ note:"Matt212 baseline · M→H, pit ~12. Great Britain *Updated* + low DF wings.", fw:8,rw:3,otd:100,ffd:25,fca:-350,rca:-200,fte:1,rte:10,fs:38,rs:4,far:5,rar:17,frh:21,rrh:47,bp:100,bb:55,fl:295,fr:295,rl:265,rr:265 },
+  spa:        { note:"Matt212 baseline · M→H, pit ~10. Belgium / Spa *Updated*.", fw:5,rw:2,otd:100,ffd:25,fca:-340,rca:-190,fte:2,rte:13,fs:38,rs:4,far:5,rar:17,frh:21,rrh:48,bp:100,bb:55,fl:295,fr:295,rl:265,rr:265 },
+  hungary:    { note:"Matt212 baseline · M→H, pit ~15. Hungary *Updated*.", fw:50,rw:49,otd:100,ffd:25,fca:-340,rca:-190,fte:1,rte:11,fs:38,rs:5,far:10,rar:19,frh:19,rrh:46,bp:100,bb:55,fl:270,fr:270,rl:240,rr:240 },
+  zandvoort:  { note:"Matt212 baseline · M→H, pit ~16. Netherlands / Zandvoort.", fw:50,rw:48,otd:100,ffd:20,fca:-340,rca:-190,fte:1,rte:12,fs:38,rs:5,far:9,rar:18,frh:22,rrh:48,bp:100,bb:55,fl:285,fr:285,rl:215,rr:215 },
+  monza:      { note:"Matt212 baseline · M→H, pit ~12. Italy / Monza minimum DF.", fw:3,rw:0,otd:100,ffd:20,fca:-350,rca:-200,fte:0,rte:10,fs:38,rs:4,far:5,rar:19,frh:21,rrh:47,bp:100,bb:55,fl:295,fr:295,rl:265,rr:265 },
+  madrid:     { note:"Matt212 has no Madrid row in the F1 25 sheet yet — using his Spain (Barcelona) baseline as placeholder until a Madrid guide ships.", fw:39,rw:32,otd:100,ffd:20,fca:-350,rca:-200,fte:0,rte:10,fs:36,rs:5,far:6,rar:18,frh:21,rrh:47,bp:100,bb:55,fl:295,fr:280,rl:220,rr:205 },
+  baku:       { note:"Matt212 baseline · M→H, pit ~10. Azerbaijan / Baku.", fw:4,rw:0,otd:100,ffd:30,fca:-350,rca:-200,fte:0,rte:10,fs:38,rs:4,far:5,rar:10,frh:21,rrh:47,bp:100,bb:55,fl:240,fr:240,rl:215,rr:215 },
+  singapore:  { note:"Matt212 baseline · M→H, pit ~13. Singapore setup + track guide.", fw:50,rw:49,otd:100,ffd:20,fca:-340,rca:-190,fte:2,rte:13,fs:37,rs:3,far:12,rar:19,frh:24,rrh:50,bp:100,bb:55,fl:237,fr:237,rl:215,rr:215 },
+  cota:       { note:"Matt212 baseline · M→H, pit ~12. USA / COTA (brake pressure 99% on his sheet).", fw:45,rw:40,otd:100,ffd:30,fca:-340,rca:-190,fte:3,rte:14,fs:37,rs:3,far:8,rar:15,frh:24,rrh:51,bp:99,bb:55,fl:284,fr:284,rl:220,rr:220 },
+  mexico:     { note:"Matt212 baseline · M→H, pit ~15. Mexico setup + track guide.", fw:40,rw:36,otd:100,ffd:35,fca:-340,rca:-190,fte:1,rte:11,fs:30,rs:6,far:8,rar:18,frh:22,rrh:48,bp:100,bb:55,fl:242,fr:242,rl:220,rr:220 },
+  brazil:     { note:"Matt212 baseline · M→H, pit ~16. Brazil / Interlagos.", fw:31,rw:23,otd:100,ffd:25,fca:-350,rca:-200,fte:0,rte:10,fs:36,rs:7,far:4,rar:18,frh:21,rrh:47,bp:100,bb:55,fl:286,fr:286,rl:213,rr:213 },
+  lasvegas:   { note:"Matt212 baseline · M→H, pit ~11. Las Vegas setup + track guide.", fw:1,rw:0,otd:100,ffd:20,fca:-350,rca:-200,fte:0,rte:10,fs:37,rs:6,far:6,rar:19,frh:22,rrh:49,bp:100,bb:55,fl:245,fr:245,rl:220,rr:220 },
+  qatar:      { note:"Matt212 baseline · M→H, pit ~12. Qatar (asymmetric tyre PSIs on his sheet).", fw:35,rw:32,otd:100,ffd:25,fca:-340,rca:-190,fte:1,rte:11,fs:37,rs:5,far:6,rar:16,frh:21,rrh:47,bp:100,bb:55,fl:282,fr:295,rl:215,rr:227 },
+  abudhabi:   { note:"Matt212 baseline · M→H, pit ~13. Abu Dhabi setup + track guide.", fw:29,rw:24,otd:100,ffd:20,fca:-340,rca:-190,fte:1,rte:11,fs:38,rs:4,far:5,rar:16,frh:20,rrh:47,bp:100,bb:55,fl:283,fr:283,rl:214,rr:214 },
+  austria_reverse:   { note:"Matt212 · Austria REVERSE · M→H, pit ~16. F1 25 Austria Reverse setup + track guide (@matt212racing).", fw:24,rw:21,otd:100,ffd:20,fca:-340,rca:-190,fte:1,rte:12,fs:28,rs:8,far:11,rar:18,frh:21,rrh:49,bp:100,bb:55,fl:295,fr:295,rl:255,rr:255 },
+  silverstone_reverse:{ note:"Matt212 · Silverstone REVERSE · M→H, pit ~11. F1 25 Britain Reverse setup + track guide.", fw:10,rw:5,otd:100,ffd:25,fca:-340,rca:-190,fte:1,rte:12,fs:38,rs:5,far:6,rar:17,frh:22,rrh:49,bp:100,bb:55,fl:282,fr:282,rl:241,rr:241 },
+  zandvoort_reverse: { note:"Matt212 · Zandvoort REVERSE · M→H, pit ~16. F1 25 Netherlands Reverse setup + track guide.", fw:45,rw:42,otd:100,ffd:25,fca:-340,rca:-190,fte:1,rte:12,fs:35,rs:5,far:8,rar:15,frh:22,rrh:50,bp:100,bb:55,fl:270,fr:270,rl:216,rr:216 }
+};
+
+function upd(k,v){document.getElementById('v-'+k).textContent=v;document.getElementById('s-'+k).value=v;}
+function updPct(k,v){document.getElementById('v-'+k).textContent=v+'%';document.getElementById('s-'+k).value=v;}
+function updDeg(k,v,d){const n=(v/d).toFixed(2);document.getElementById('v-'+k).textContent=(v>=0?'+':'')+n+'°';document.getElementById('s-'+k).value=v;}
+function updPsi(k,v){document.getElementById('v-'+k).textContent=(v/10).toFixed(1);document.getElementById('s-'+k).value=v;}
+
+function applySetup(s){
+  upd('fw',s.fw);upd('rw',s.rw);
+  updPct('otd',s.otd);updPct('ffd',s.ffd);
+  updDeg('fca',s.fca,100);updDeg('rca',s.rca,100);
+  updDeg('fte',s.fte,100);updDeg('rte',s.rte,100);
+  upd('fs',s.fs);upd('rs',s.rs);upd('far',s.far);upd('rar',s.rar);
+  upd('frh',s.frh);upd('rrh',s.rrh);
+  updPct('bp',s.bp);updPct('bb',s.bb);
+  updPsi('fl',s.fl);updPsi('fr',s.fr);updPsi('rl',s.rl);updPsi('rr',s.rr);
+}
+
+function onTrackChange(){
+  const t=document.getElementById('trackSelect').value;
+  const info=document.getElementById('trackInfo');
+  if(t&&COMMUNITY[t]){
+    document.getElementById('trackInfoDesc').textContent=COMMUNITY[t].note;
+    info.classList.add('visible');
+    applySetup(COMMUNITY[t]);
+  } else info.classList.remove('visible');
+}
+
+function loadCommunitySetup(){
+  const t=document.getElementById('trackSelect').value;
+  if(!t){showToast('SELECT A TRACK FIRST');return;}
+  if(!COMMUNITY[t]){showToast('NO BASELINE FOR THIS TRACK');return;}
+  applySetup(COMMUNITY[t]);
+  const sel=document.getElementById('trackSelect');
+  const label=sel.options[sel.selectedIndex].text.split(' · ')[1] || sel.options[sel.selectedIndex].text;
+  document.getElementById('setupName').value=label.split(' — ')[0]+' Matt212';
+  showToast('MATT212 BASELINE RELOADED');
+}
+
+function getSetup(){
+  const ids=['fw','rw','otd','ffd','fca','rca','fte','rte','fs','rs','far','rar','frh','rrh','bp','bb','fl','fr','rl','rr'];
+  const s={};ids.forEach(k=>s[k]=document.getElementById('s-'+k).value);return s;
+}
+
+function f125StorageKeysForSetups(){
+  return Object.keys(localStorage).filter(k=>k.startsWith('f125_')&&k!=='f125_lt_sessions'&&k!==LS_ANTHROPIC_KEY);
+}
+
+function saveSetup(){
+  const t=document.getElementById('trackSelect').value;
+  const n=document.getElementById('setupName').value.trim();
+  if(!t){showToast('SELECT A TRACK FIRST');return;}
+  if(!n){showToast('ENTER A SETUP NAME');return;}
+  const sel=document.getElementById('trackSelect');
+  const key='f125_'+Date.now();
+  const data={key,track:t,trackLabel:sel.options[sel.selectedIndex].text,name:n,setup:getSetup(),saved:new Date().toLocaleDateString()};
+  localStorage.setItem(key,JSON.stringify(data));
+  showToast('SETUP SAVED!');renderSavedList();
+}
+
+function exportSetupsBackup(){
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith('f125_')&&k!==LS_ANTHROPIC_KEY);
+  const data={};
+  keys.forEach(k=>{data[k]=localStorage.getItem(k);});
+  const out={exported:new Date().toISOString(),data};
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='f125-setups-backup.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('BACKUP DOWNLOADED');
+}
+
+/** Build [key, valueString] pairs from backup JSON (export shape, flat f125_*, or setups[]). */
+function normalizeImportEntries(j){
+  const rows=[];
+  const push=(k,v)=>{
+    if(typeof k!=='string'||!k.startsWith('f125_')||k===LS_ANTHROPIC_KEY)return;
+    const val=typeof v==='string'?v:JSON.stringify(v);
+    rows.push([k,val]);
+  };
+  if(!j||typeof j!=='object'||Array.isArray(j))return rows;
+
+  const takeFrom=(o)=>{
+    if(!o||typeof o!=='object'||Array.isArray(o))return;
+    for(const [k,v] of Object.entries(o))push(k,v);
+  };
+
+  if(j.data!=null&&typeof j.data==='object'&&!Array.isArray(j.data))takeFrom(j.data);
+
+  if(Array.isArray(j.setups)){
+    const t=Date.now();
+    j.setups.forEach((item,i)=>{
+      if(!item||typeof item!=='object')return;
+      const {track,name,setup,trackLabel,saved,key:k0}=item;
+      if(!track||!name||!setup)return;
+      const k=(typeof k0==='string'&&k0.startsWith('f125_'))?k0:('f125_imp_'+t+'_'+i);
+      push(k,JSON.stringify({key:k,track,trackLabel:trackLabel||'',name,setup,saved:saved||'imported'}));
+    });
+  }
+
+  if(!rows.length){
+    const skip=new Set(['exported','data','setups','_readme']);
+    for(const [k,v] of Object.entries(j)){
+      if(skip.has(k))continue;
+      push(k,v);
+    }
+  }
+  return rows;
+}
+
+function importSetupsBackup(ev){
+  const f=ev.target.files[0];
+  ev.target.value='';
+  if(!f)return;
+  const reader=new FileReader();
+  reader.onerror=()=>showToast('IMPORT FAILED: cannot read file');
+  reader.onload=()=>{
+    let text=reader.result;
+    if(typeof text!=='string'){showToast('IMPORT FAILED: empty file');return;}
+    if(text.charCodeAt(0)===0xfeff)text=text.slice(1);
+    let j;
+    try{j=JSON.parse(text);}catch(e){showToast('IMPORT FAILED: '+String(e.message||e).slice(0,120));return;}
+    const rows=normalizeImportEntries(j);
+    if(!rows.length){showToast('NO SETUPS IN FILE — use EXPORT backup, or JSON with data.f125_* keys');return;}
+    let nNew=0,nUp=0;
+    for(const [k,val] of rows){
+      if(localStorage.getItem(k)==null)nNew++;else nUp++;
+      localStorage.setItem(k,val);
+    }
+    ltInit();
+    renderSavedList();
+    showToast(nUp?('IMPORTED '+nNew+' NEW, '+nUp+' UPDATED'):('IMPORTED '+nNew+' SETUPS'));
+  };
+  reader.readAsText(f,'UTF-8');
+}
+
+function mergeBundledStoragePayload(map){
+  if(!map||typeof map!=='object')return 0;
+  let n=0;
+  for(const [k,v] of Object.entries(map)){
+    if(typeof k!=='string'||!k.startsWith('f125_')||k===LS_ANTHROPIC_KEY)continue;
+    if(k.startsWith('_'))continue;
+    const val=typeof v==='string'?v:JSON.stringify(v);
+    if(localStorage.getItem(k)==null){localStorage.setItem(k,val);n++;}
+  }
+  return n;
+}
+
+function parseBundledBackupJson(j){
+  if(!j||typeof j!=='object')return null;
+  let map=j.data;
+  if(!map||typeof map!=='object'){
+    map={};
+    for(const [k,v] of Object.entries(j)){
+      if(typeof k==='string'&&k.startsWith('f125_')&&k!==LS_ANTHROPIC_KEY&&!k.startsWith('_'))map[k]=v;
+    }
+  }
+  return map;
+}
+
+async function applyBundledSetups(){
+  const urls=['/bundled-setups.json','/f125-setups-backup.json'];
+  for(const u of urls){
+    try{
+      const r=await fetch(u,{cache:'no-store'});
+      if(!r.ok)continue;
+      const j=await r.json();
+      const map=parseBundledBackupJson(j);
+      if(map)mergeBundledStoragePayload(map);
+    }catch(_){/* skip */}
+  }
+}
+
+function loadSetup(key){
+  const d=JSON.parse(localStorage.getItem(key));
+  if(!d)return;
+  document.getElementById('trackSelect').value=d.track;
+  document.getElementById('setupName').value=d.name;
+  applySetup(d.setup);onTrackChange();
+  showToast('SETUP LOADED');
+  document.getElementById('savedPanel').classList.remove('open');
+}
+
+function deleteSetup(key){localStorage.removeItem(key);renderSavedList();showToast('DELETED');}
+
+function renderSavedList(){
+  const list=document.getElementById('savedList');
+  const keys=f125StorageKeysForSetups().filter(k=>{
+    try{const d=JSON.parse(localStorage.getItem(k));return d&&d.name&&d.setup;}catch(_){return false;}
+  });
+  if(!keys.length){list.innerHTML='<div style="color:var(--muted);font-size:0.85rem;padding:8px 0;">No setups saved yet.</div>';return;}
+  list.innerHTML=keys.sort().reverse().map(k=>{
+    const d=JSON.parse(localStorage.getItem(k));
+    return `<div class="saved-item"><div class="saved-item-info"><div class="saved-item-name">${d.name}</div><div class="saved-item-track">${d.trackLabel||d.track} · ${d.saved}</div></div><div class="saved-item-actions"><button class="btn btn-secondary" style="padding:6px 10px;font-size:0.55rem;" onclick="loadSetup('${k}')">LOAD</button><button class="btn btn-danger" style="padding:6px 10px;font-size:0.55rem;" onclick="deleteSetup('${k}')">✕</button></div></div>`;
+  }).join('');
+}
+
+function toggleSaved(){const p=document.getElementById('savedPanel');p.classList.toggle('open');if(p.classList.contains('open'))renderSavedList();}
+function toggleSection(id){document.getElementById(id).classList.toggle('collapsed');}
+function resetSetup(){
+  const t=document.getElementById('trackSelect').value;
+  if(t&&COMMUNITY[t]){applySetup(COMMUNITY[t]);showToast('TRACK BASELINE RESTORED');}
+  else{applySetup({fw:20,rw:22,otd:75,ffd:40,fca:-350,rca:-200,fte:0,rte:10,fs:41,rs:1,far:9,rar:21,frh:20,rrh:46,bp:100,bb:55,fl:285,fr:285,rl:265,rr:265});showToast('DEFAULT RESET');}
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+// ============================================================
+// AI SETUP TUNER — F1 25 in-game behaviour (for system prompt)
+// Summarised from EA help (track-type setup) + standard F1-game slider semantics; not a physics sim.
+// ============================================================
+const F1_25_SETUP_KB = `You are editing ONLY the EA SPORTS F1 25 Car Setup screen. Sliders use the game's internal scales (listed below with ranges)—not real-world units.
+
+=== Who is asking (read this first) ===
+Most users are NOT car-setup experts. Messages will often be vague, short, or emotional: e.g. "faster", "more grip", "scary", "it spins", "won't turn", "pushes wide", "understeery", "loose", "bumpy", "tyres gone". Do not assume they know camber, anti-roll bars, differential %, or aero balance.
+
+When the request is vague or underspecified:
+• Infer the most likely meaning in F1 25 terms (e.g. "faster" might mean corner speed, straight-line, or qual lap—default toward safer cornering/grip and stability unless they clearly mean straights).
+• Make CONSERVATIVE changes: small slider moves, few parameters, prioritise predictability over maximum attack. Avoid big rear-loosening steps unless they clearly want a livelier rear.
+• If several fixes are possible, pick the one least likely to surprise a casual driver.
+• When a Matt212 baseline is provided, treat it as the safe anchor—drift away only as much as their message reasonably requires.
+
+=== How each group behaves in F1 25 (game logic) ===
+AERODYNAMICS (fw, rw): More wing on an axle adds downforce and drag on that axle. Extra grip in corners and under braking; less top speed and slower acceleration. Front wing shifts aero balance forward; rear wing shifts it rearward. Tune balance against understeer/oversteer—not just "more grip everywhere."
+
+TRANSMISSION (otd, ffd): On-throttle diff (50–100%): Higher % = more rear locking under power → usually calmer traction on exit but can feel pushy/understeery on throttle; lower % = more open → can help rotation and reduce understeer on exit but easier to spin. Off-throttle diff (10–100%): Lower % tends to free the rear when lifting/coasting (more rotation into corners); higher % = more stable/engine-braking stability on entry. Drivers often tweak these on the MFD during a stint—your baseline should match the user's stated problem.
+
+SUSPENSION GEOMETRY (fca, rca, fte, rte): Camber (negative = game convention): More negative on an axle typically supports that axle in lateral cornering at the cost of straight-line traction and tyre wear. Toe: Front toe changes turn-in sharpness and on-centre feel; rear toe changes rear stability and traction (especially on power). Use small steps—geometry interacts strongly with tyre temps.
+
+SUSPENSION (fs, rs) & ARBs (far, rar): Stiffer = less roll, quicker response, better aero platform on smooth asphalt; harsher on kerbs/bumps and can reduce mechanical grip. Softer = more compliance and kerb ride, more body roll. Front ARB stiffer often increases understeer in steady cornering; rear ARB stiffer often increases oversteer tendency—adjust both ends for balance, not one slider in isolation.
+
+RIDE HEIGHT (frh, rrh): Lower can increase underfloor downforce until bottoming/plank wear. Rake (rear vs front height) shifts aero balance; change with wings, not alone.
+
+BRAKES (bp, bb): Higher brake pressure = shorter stops but easier lockups (skill-dependent). Brake bias % forward = fronts do more work (EA: useful after long straights); slightly more rearward in wet to reduce front locking.
+
+TYRES (fl, fr, rl, rr PSI): Pressure shifts temperature window and contact patch. EA's track guide: lower pressures often help tight/twisty grip; higher can help if tyres are overheating. Use per-corner PSI when the circuit loads one side (e.g. long high-load corners).
+
+=== Track-type starting points (EA official "set up by track type") ===
+• High-speed / long straights: lower wings; firmer suspension for stability; brake bias somewhat forward for heavy braking zones.
+• Tight / twisty: higher wings; softer suspension; often lower tyre pressures.
+• Wet: higher wings; softer suspension; brake bias slightly rear to protect front locks.
+
+=== Matt212 meta-baseline (when the next section includes it) ===
+If a "Matt212 meta-baseline" block is provided for the selected track, those numbers come from Matt212's public F1 25 setup sheet in this app—widely used community meta, biased slightly toward drivability vs raw time-trial knives. Treat that block as the PRIMARY reference for wing level, mechanical balance, diff bands, and tyre PSI for THAT circuit. Nudge the user's CURRENT setup to fix their issue while staying philosophically close to Matt212 unless they clearly want something else (e.g. "minimum wing regardless").
+
+=== How you must respond ===
+Map the user's symptom or goal to the FEWEST sliders that F1 25 actually exposes. Prefer small incremental changes unless they ask for a big shift—especially for non-expert wording. Keep every value inside the ranges given below. Never invent parameters (no engine braking MFD mapping, no fuel, no differential presets not in setup).
+
+In the JSON, write "explanation" in plain English for a casual player (no jargon pile): what you changed and what they might feel in the car. Optional: one friendly tip (e.g. "if it still pushes, say so and we can add a touch more front wing").`;
+
+function matt212BaselinePrompt(trackKey, trackLabel){
+  const b = trackKey && COMMUNITY[trackKey];
+  if (!b) {
+    return `Track: ${trackLabel}\nNo Matt212 row in this app for this selection (pick a track in the dropdown for circuit-specific meta). Use EA track-type heuristics + current values only.`;
+  }
+  return `Track: ${trackLabel}
+
+=== Matt212 meta-baseline for this circuit ===
+Stored in-app from Matt212's F1 25 sheet (@matt212racing)—use as the meta anchor for THIS track (competitive, slightly easier to drive than extreme TT setups).
+
+Context: ${b.note}
+
+Reference targets (same keys as JSON output; use as ballpark, not a hard ceiling):
+fw ${b.fw}, rw ${b.rw} | otd ${b.otd}%, ffd ${b.ffd}% | fca ${b.fca}, rca ${b.rca}, fte ${b.fte}, rte ${b.rte} | fs ${b.fs}, rs ${b.rs}, far ${b.far}, rar ${b.rar}, frh ${b.frh}, rrh ${b.rrh} | bp ${b.bp}%, bb ${b.bb}% | fl ${b.fl}, fr ${b.fr}, rl ${b.rl}, rr ${b.rr}
+
+Tuning rules: (1) Fix the user's stated problem with minimal slider count. (2) Keep solutions compatible with this track's Matt212 philosophy—e.g. don't slam to minimum wing on a high-DF track unless they explicitly want top speed over lap time. (3) If current setup is wildly off Matt212 and the user gives a vague complaint, moving relevant sliders toward this reference before fine-tuning is appropriate. (4) Tyre PSI and wing bands should stay near reference unless the symptom clearly demands otherwise (overheating, wet, etc.). (5) Users are often non-experts: vague asks → small, safe nudges; never assume they want an edgy TT-style car unless they say so.`;
+}
+
+function formatCurrentSetupForAi(current){
+  return `- Front Wing: ${current.fw} (range 0-50)
+- Rear Wing: ${current.rw} (range 0-50)
+- On Throttle Diff: ${current.otd}% (range 50-100)
+- Off Throttle Diff: ${current.ffd}% (range 10-100)
+- Front Camber: ${(current.fca/100).toFixed(2)}° (slider ${current.fca}, range -350 to -100)
+- Rear Camber: ${(current.rca/100).toFixed(2)}° (slider ${current.rca}, range -200 to -10)
+- Front Toe: ${(current.fte/100).toFixed(2)}° (slider ${current.fte}, range 0-50)
+- Rear Toe: ${(current.rte/100).toFixed(2)}° (slider ${current.rte}, range 0-50)
+- Front Suspension: ${current.fs} (range 1-50)
+- Rear Suspension: ${current.rs} (range 1-50)
+- Front ARB: ${current.far} (range 1-50)
+- Rear ARB: ${current.rar} (range 1-50)
+- Front Ride Height: ${current.frh} (range 10-60)
+- Rear Ride Height: ${current.rrh} (range 20-80)
+- Brake Pressure: ${current.bp}% (range 50-100)
+- Brake Bias: ${current.bb}% (range 50-70)
+- FL Tyre PSI: ${(current.fl/10).toFixed(1)} (slider ${current.fl}, range 200-300)
+- FR Tyre PSI: ${(current.fr/10).toFixed(1)} (slider ${current.fr}, range 200-300)
+- RL Tyre PSI: ${(current.rl/10).toFixed(1)} (slider ${current.rl}, range 190-300)
+- RR Tyre PSI: ${(current.rr/10).toFixed(1)} (slider ${current.rr}, range 190-300)`;
+}
+
+function aiEscapeDisplay(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function aiOnModeChange(){
+  const ask=document.querySelector('input[name="aiMode"][value="ask"]').checked;
+  const inp=document.getElementById('aiInput');
+  const th=document.getElementById('aiThinking');
+  const hint=document.getElementById('aiModeHint');
+  if(ask){
+    inp.placeholder='Ask anything — "what does diff do?" "why is my car pushing?"';
+    th.textContent='THINKING...';
+    hint.textContent='Ask mode: answers only — sliders stay put. Switch to Change setup if you want the AI to move sliders.';
+  }else{
+    inp.placeholder='e.g. "more rear stability" — sliders will update';
+    th.textContent='UPDATING SETUP...';
+    hint.textContent='Change setup: your message updates sliders. Ask: questions only — no slider changes.';
+  }
+}
+
+function aiKeydown(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAiRequest();}
+}
+
+function addMsg(role, html){
+  const box=document.getElementById('aiMessages');
+  const div=document.createElement('div');
+  div.className='msg msg-'+role;
+  div.innerHTML=html;
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+}
+
+async function sendAiRequest(){
+  const input=document.getElementById('aiInput');
+  const send=document.getElementById('aiSend');
+  const thinking=document.getElementById('aiThinking');
+  const text=input.value.trim();
+  if(!text)return;
+
+  const track=document.getElementById('trackSelect').value;
+  const trackLabel=track ? document.getElementById('trackSelect').options[document.getElementById('trackSelect').selectedIndex].text : 'No track selected';
+  const current=getSetup();
+
+  addMsg('user', text);
+  input.value='';
+  send.disabled=true;
+  thinking.classList.add('show');
+
+  const ask = document.querySelector('input[name="aiMode"]:checked')?.value === 'ask';
+  let systemPrompt;
+  let max_tokens = 1000;
+  if (ask) {
+    max_tokens = 2048;
+    systemPrompt = `${F1_25_SETUP_KB}
+
+You are in ASK MODE for this F1 25 Setup Manager. Users are usually beginners.
+
+THIS TURN DOES NOT CHANGE THEIR SLIDERS — the app will not apply anything you write. You only answer questions and explain.
+
+Strict rules:
+- Reply in normal conversational English. Do NOT output JSON. Do NOT output a full machine-readable setup block (no {"setup": ...}).
+- Do not list every slider value as a copy-paste preset. You may describe ideas in words ("a bit more rear wing") without giving a complete numeric setup.
+- Explain F1 25 setup options, interpret vague feelings ("scary", "won't turn"), and use the Matt212 baseline section below for context when helpful.
+- If they want this app to move sliders automatically, tell them to select **Change setup** mode and send the same message there.
+
+Current setup (context only — you are not changing it):
+${formatCurrentSetupForAi(current)}
+
+${matt212BaselinePrompt(track, trackLabel)}`;
+  } else {
+    systemPrompt = `${F1_25_SETUP_KB}
+
+You are an expert F1 25 setup engineer helping casual players. They often use vague language—interpret generously and tune conservatively. Adjust the car setup using only the parameters below.
+
+Current setup values:
+${formatCurrentSetupForAi(current)}
+
+${matt212BaselinePrompt(track, trackLabel)}
+
+Respond ONLY with a valid JSON object. No other text, no markdown, no explanation outside the JSON.
+The JSON must have exactly these fields:
+{
+  "explanation": "Plain English for a non-expert: what changed and what to expect (no jargon wall)",
+  "changes": ["list of changed parameters as short strings like 'Front Wing: 22→28'"],
+  "setup": {
+    "fw": number, "rw": number,
+    "otd": number, "ffd": number,
+    "fca": number, "rca": number, "fte": number, "rte": number,
+    "fs": number, "rs": number, "far": number, "rar": number, "frh": number, "rrh": number,
+    "bp": number, "bb": number,
+    "fl": number, "fr": number, "rl": number, "rr": number
+  }
+}
+Only change the values that are relevant to the user's request. Keep unchanged values exactly as they are. All values must stay within their ranges.`;
+  }
+
+  try {
+    const apiPayload = { system: systemPrompt, message: text, max_tokens };
+    const sk = getStoredApiKey();
+    if (sk) apiPayload.apiKey = sk;
+
+    const res = await fetch('/api/ai-setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(apiPayload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      const errMsg = data.error || `HTTP ${res.status}`;
+      const esc = String(errMsg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      addMsg('ai', `<strong>ERROR</strong>${esc}`);
+      showToast('AI REQUEST FAILED');
+      return;
+    }
+
+    const blocks = Array.isArray(data.content) ? data.content : [];
+    const raw = blocks.map(b => b.text || '').join('');
+
+    if (ask) {
+      addMsg('ai', '<strong>ANSWER</strong>' + aiEscapeDisplay(raw.trim()));
+      showToast('ANSWER READY');
+      return;
+    }
+
+    const clean = raw.replace(/```json|```/g,'').trim();
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch (parseErr) {
+      addMsg('ai', `<strong>ERROR</strong>Model did not return valid JSON. Raw reply logged in console.`);
+      console.error('AI raw:', raw);
+      showToast('INVALID AI RESPONSE');
+      return;
+    }
+
+    if (!parsed.setup || typeof parsed.setup !== 'object') {
+      addMsg('ai', `<strong>ERROR</strong>Response missing setup object.`);
+      return;
+    }
+
+    applySetup(parsed.setup);
+
+    const pillsHtml = parsed.changes && parsed.changes.length
+      ? `<div class="changes-list">${parsed.changes.map(c=>`<span class="change-pill">${aiEscapeDisplay(c)}</span>`).join('')}</div>`
+      : '';
+
+    addMsg('ai', `<strong>SETUP UPDATED</strong>${aiEscapeDisplay(parsed.explanation || '').replace(/\n/g,'<br>')}${pillsHtml}`);
+    showToast('SETUP UPDATED!');
+
+  } catch(err) {
+    addMsg('ai', `<strong>ERROR</strong>${err.message === 'Failed to fetch' ? 'Open the app via the local server (npm start), not file:// — the AI proxy only works on http://localhost.' : 'Could not reach AI.'}`);
+    console.error(err);
+  } finally {
+    send.disabled=false;
+    thinking.classList.remove('show');
+  }
+}
+
+// ============================================================
+// LAP TIME TRACKER
+// ============================================================
+const COMPOUNDS = {
+  soft:   { label:'Soft',   color:'#e8002d' },
+  medium: { label:'Medium', color:'#ffd906' },
+  hard:   { label:'Hard',   color:'#f0f0f0' },
+  inter:  { label:'Inter',  color:'#43b02a' },
+  wet:    { label:'Wet',    color:'#0067ff' }
+};
+
+let ltSessions = [];
+let ltCurrentId = null;
+
+function ltInit() {
+  const raw = localStorage.getItem('f125_lt_sessions');
+  ltSessions = raw ? JSON.parse(raw) : [];
+  ltRenderSessionSelect();
+}
+
+function ltSave() {
+  localStorage.setItem('f125_lt_sessions', JSON.stringify(ltSessions));
+}
+
+function ltRenderSessionSelect() {
+  const sel = document.getElementById('ltSessionSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Select Session —</option>';
+  ltSessions.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id;
+    o.textContent = s.name + (s.setupName ? ' · ' + s.setupName : '');
+    sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+}
+
+function ltOpenModal() {
+  const sel = document.getElementById('ltModalSetup');
+  sel.innerHTML = '<option value="">— No setup linked —</option>';
+  const keys = f125StorageKeysForSetups();
+  keys.sort().reverse().forEach(k => {
+    const d = JSON.parse(localStorage.getItem(k));
+    if (!d || !d.name) return;
+    const o = document.createElement('option');
+    o.value = d.key;
+    o.textContent = d.name + ' (' + (d.trackLabel || d.track) + ')';
+    sel.appendChild(o);
+  });
+  document.getElementById('ltModalName').value = '';
+  document.getElementById('ltModal').classList.add('open');
+  setTimeout(() => document.getElementById('ltModalName').focus(), 100);
+}
+
+function ltCloseModal() {
+  document.getElementById('ltModal').classList.remove('open');
+}
+
+function ltCreateSession() {
+  const name = document.getElementById('ltModalName').value.trim();
+  if (!name) { showToast('ENTER A SESSION NAME'); return; }
+  const setupKey = document.getElementById('ltModalSetup').value;
+  let setupName = '';
+  if (setupKey) {
+    const d = JSON.parse(localStorage.getItem(setupKey));
+    if (d) setupName = d.name;
+  }
+  const session = {
+    id: 'lts_' + Date.now(),
+    name,
+    setupKey,
+    setupName,
+    created: new Date().toLocaleDateString(),
+    laps: []
+  };
+  ltSessions.unshift(session);
+  ltSave();
+  ltRenderSessionSelect();
+  document.getElementById('ltSessionSelect').value = session.id;
+  ltCurrentId = session.id;
+  ltShowSession();
+  ltCloseModal();
+  showToast('SESSION CREATED!');
+}
+
+function ltLoadSession() {
+  ltCurrentId = document.getElementById('ltSessionSelect').value;
+  if (ltCurrentId) ltShowSession();
+  else ltHideSession();
+}
+
+function ltShowSession() {
+  document.getElementById('ltStats').style.display = 'grid';
+  document.getElementById('ltForm').style.display = 'flex';
+  document.getElementById('ltTableWrap').style.display = 'block';
+  ltRenderLaps();
+  ltRenderStats();
+}
+
+function ltHideSession() {
+  document.getElementById('ltStats').style.display = 'none';
+  document.getElementById('ltForm').style.display = 'none';
+  document.getElementById('ltTableWrap').style.display = 'none';
+}
+
+function ltGetSession() {
+  return ltSessions.find(s => s.id === ltCurrentId);
+}
+
+function ltAddLap() {
+  const session = ltGetSession();
+  if (!session) return;
+  const timeStr = document.getElementById('ltLapTime').value.trim();
+  if (!timeStr) { showToast('ENTER A LAP TIME'); return; }
+  const ms = ltParseTime(timeStr);
+  if (ms === null) { showToast('FORMAT: 1:32.456'); return; }
+  const lap = {
+    id: Date.now(),
+    lapNum: session.laps.length + 1,
+    time: timeStr,
+    timeMs: ms,
+    compound: document.getElementById('ltCompound').value,
+    s1: document.getElementById('ltS1').value.trim(),
+    s2: document.getElementById('ltS2').value.trim(),
+    s3: document.getElementById('ltS3').value.trim(),
+  };
+  session.laps.push(lap);
+  ltSave();
+  document.getElementById('ltLapTime').value = '';
+  document.getElementById('ltS1').value = '';
+  document.getElementById('ltS2').value = '';
+  document.getElementById('ltS3').value = '';
+  ltRenderLaps();
+  ltRenderStats();
+  showToast('LAP ADDED!');
+}
+
+function ltParseTime(str) {
+  const m1 = str.match(/^(\d+):(\d{2})\.(\d{1,3})$/);
+  if (m1) {
+    const mins = parseInt(m1[1]);
+    const secs = parseInt(m1[2]);
+    const ms = parseInt(m1[3].padEnd(3,'0'));
+    return mins*60000 + secs*1000 + ms;
+  }
+  const m2 = str.match(/^(\d+)\.(\d{1,3})$/);
+  if (m2) {
+    const secs = parseInt(m2[1]);
+    const ms = parseInt(m2[2].padEnd(3,'0'));
+    return secs*1000 + ms;
+  }
+  return null;
+}
+
+function ltFormatMs(ms) {
+  const mins = Math.floor(ms / 60000);
+  const secs = Math.floor((ms % 60000) / 1000);
+  const millis = ms % 1000;
+  return `${mins}:${String(secs).padStart(2,'0')}.${String(millis).padStart(3,'0')}`;
+}
+
+function ltDeleteLap(lapId) {
+  const session = ltGetSession();
+  if (!session) return;
+  session.laps = session.laps.filter(l => l.id !== lapId);
+  session.laps.forEach((l,i) => l.lapNum = i+1);
+  ltSave();
+  ltRenderLaps();
+  ltRenderStats();
+}
+
+function ltRenderLaps() {
+  const session = ltGetSession();
+  const tbody = document.getElementById('ltTableBody');
+  if (!session || !session.laps.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="lt-empty">No laps recorded yet. Add your first lap above.</td></tr>';
+    return;
+  }
+  const bestMs = Math.min(...session.laps.map(l => l.timeMs));
+  const bestS1 = session.laps.filter(l=>l.s1).length ? Math.min(...session.laps.filter(l=>l.s1).map(l=>ltParseTime(l.s1)||Infinity)) : null;
+  const bestS2 = session.laps.filter(l=>l.s2).length ? Math.min(...session.laps.filter(l=>l.s2).map(l=>ltParseTime(l.s2)||Infinity)) : null;
+  const bestS3 = session.laps.filter(l=>l.s3).length ? Math.min(...session.laps.filter(l=>l.s3).map(l=>ltParseTime(l.s3)||Infinity)) : null;
+
+  tbody.innerHTML = [...session.laps].reverse().map(l => {
+    const isBest = l.timeMs === bestMs;
+    const c = COMPOUNDS[l.compound] || COMPOUNDS.soft;
+    const s1ms = l.s1 ? ltParseTime(l.s1) : null;
+    const s2ms = l.s2 ? ltParseTime(l.s2) : null;
+    const s3ms = l.s3 ? ltParseTime(l.s3) : null;
+    const s1cls = s1ms && s1ms === bestS1 ? 'lt-sector best-s' : 'lt-sector';
+    const s2cls = s2ms && s2ms === bestS2 ? 'lt-sector best-s' : 'lt-sector';
+    const s3cls = s3ms && s3ms === bestS3 ? 'lt-sector best-s' : 'lt-sector';
+    return `<tr${isBest ? ' class="best-lap"':''}>
+      <td class="lt-lapnum">${l.lapNum}</td>
+      <td class="lt-time${isBest?' best':''}">${l.time}${isBest?' 🏆':''}</td>
+      <td class="${s1cls}">${l.s1||'—'}</td>
+      <td class="${s2cls}">${l.s2||'—'}</td>
+      <td class="${s3cls}">${l.s3||'—'}</td>
+      <td><span class="compound-dot" style="background:${c.color}"></span>${c.label}</td>
+      <td style="font-size:0.72rem;color:var(--muted);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${session.setupName||'—'}</td>
+      <td><button class="lt-del" onclick="ltDeleteLap(${l.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function ltRenderStats() {
+  const session = ltGetSession();
+  if (!session || !session.laps.length) {
+    document.getElementById('ltBest').textContent = '—';
+    document.getElementById('ltAvg').textContent = '—';
+    document.getElementById('ltCount').textContent = '0';
+    return;
+  }
+  const times = session.laps.map(l => l.timeMs);
+  const best = Math.min(...times);
+  const avg = Math.round(times.reduce((a,b)=>a+b,0)/times.length);
+  document.getElementById('ltBest').textContent = ltFormatMs(best);
+  document.getElementById('ltAvg').textContent = ltFormatMs(avg);
+  document.getElementById('ltCount').textContent = session.laps.length;
+}
+
+applyBundledSetups().then(()=>{
+  ltInit();
+  aiOnModeChange();
+  refreshApiKeyBar();
+});
+</script>
+</body>
+</html>
