@@ -76,7 +76,8 @@
       {
         "provider": "github",
         "owner": "benji558",
-        "repo": "f1-app-"
+        "repo": "f1-app-",
+        "releaseType": "release"
       }
     ]
   }

@@ -67,7 +67,7 @@ End users run the installer or portable exe; optional **`.env` next to the `.exe
    - **Tag push:** `git tag v1.0.1 && git push origin v1.0.1` (tag should match the new version, e.g. `v` + semver), **or**
    - **Manual run:** GitHub → **Actions** → workflow **Release** → **Run workflow**.
 
-   The job builds on **windows-latest** and uploads the same artifacts as local `dist` + `latest.yml` for auto-update. One-time repo setting: **Settings → Actions → General → Workflow permissions → Read and write permissions** (otherwise uploads get 403).
+   The job builds on **windows-latest** and uploads the same artifacts as local `dist` + `latest.yml` for auto-update. One-time repo setting: **Settings → Actions → General → Workflow permissions → Read and write permissions** (otherwise uploads get 403). `build.publish` sets **`releaseType: "release"`** so GitHub shows a public release (electron-builder’s default is otherwise **draft**).
 
 2. **Local machine:** If you prefer building on your PC, **quit the desktop app** first (avoids `EBUSY` on `release\win-unpacked`), then:
 
