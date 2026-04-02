@@ -39,19 +39,13 @@ function startServer(opts = {}) {
     res.sendFile(path.join(rootDir, 'f1_setup_manager.html'));
   });
 
-  ex.get('/api/ai-status', (_req, res) => {
-    res.json({ envKeyConfigured: Boolean((process.env.ANTHROPIC_API_KEY || '').trim()) });
-  });
-
   ex.post('/api/ai-setup', async (req, res) => {
     const bodyIn = req.body || {};
-    const clientKey = typeof bodyIn.apiKey === 'string' ? bodyIn.apiKey.trim() : '';
-    const envKey = (process.env.ANTHROPIC_API_KEY || '').trim();
-    const apiKey = clientKey || envKey;
+    const apiKey = typeof bodyIn.apiKey === 'string' ? bodyIn.apiKey.trim() : '';
     if (!apiKey) {
-      return res.status(500).json({
+      return res.status(401).json({
         error:
-          'No API key. Use “Configure API key” in the app, or add ANTHROPIC_API_KEY to a .env file next to the executable.',
+          'No API key. Add your Anthropic key in the app (🔑 API KEY). The server does not supply a shared key.',
       });
     }
 

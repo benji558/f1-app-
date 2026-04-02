@@ -57,16 +57,15 @@ Optional environment variables (or entries in `.env`):
 | `PORT` | `3456` | HTTP port |
 | `HOST` | `0.0.0.0` | Bind address (`127.0.0.1` only if you want local-only) |
 
-### Anthropic API key
+### Anthropic API key (per user)
 
-The UI **AI** features call `/api/ai-setup` on your machine; the server forwards requests to Anthropic.
+**AI only works if that person adds their own key** in the app (**🔑 API KEY**). It is saved in **that browser’s** `localStorage` only.
 
-1. Copy `.env.example` to `.env` in the **same folder as `server.js`**.
-2. Set `ANTHROPIC_API_KEY=sk-ant-...`
+- **No key → no AI** (the server does not ship a shared “house” key).
+- **Export / import** of setups does **not** include the API key.
+- The Node server **proxies** requests to Anthropic using the key from the request body; it is **not** written to disk.
 
-Or use **Configure API key** in the app: the key is stored in **browser localStorage** and overrides the server `.env` for that browser.
-
-> **Security:** Do not commit `.env`. It is listed in `.gitignore`.
+> Optional: copy `.env.example` to `.env` for `PORT` / `HOST` only — not for Anthropic.
 
 ---
 
@@ -74,7 +73,7 @@ Or use **Configure API key** in the app: the key is stored in **browser localSto
 
 1. Choose a **track**, then **Load Matt212 baseline** or adjust sliders manually.
 2. Name the setup and **Save** to add it under **My setups**.
-3. **Export** periodically to back up `localStorage` (setups + lap data + anything else under `f125_*` except the API key slot, which is handled separately).
+3. **Export** periodically to back up `localStorage` (setups + lap data under `f125_*`).
 4. **Import** a previously exported JSON file on a new browser or machine.
 
 **PWA:** `manifest.json` is served from the root; you can “install” the app from a supporting browser while the server is running (still needs the Node server for API routes and static files).
@@ -85,7 +84,7 @@ Or use **Configure API key** in the app: the key is stored in **browser localSto
 
 | File | Role |
 |------|------|
-| `server.js` | Express static server, `/api/ai-status`, `/api/ai-setup` proxy to Anthropic |
+| `server.js` | Express static server, `/api/ai-setup` proxy to Anthropic (uses caller’s `apiKey` in JSON body) |
 | `f1_setup_manager.html` | Single-page UI (HTML + CSS + JS) |
 | `bundled-setups.json` | Optional shared backup shape: `{ "data": { "f125_…": "…" } }` |
 | `f125-setups-backup.json` | Same idea; both filenames are fetched on load for merge |
@@ -98,8 +97,7 @@ Or use **Configure API key** in the app: the key is stored in **browser localSto
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/api/ai-status` | `{ envKeyConfigured: boolean }` — whether `ANTHROPIC_API_KEY` is set on the server |
-| `POST` | `/api/ai-setup` | JSON body: `system`, `message`, optional `apiKey`, `model`, `max_tokens` — returns Anthropic messages response JSON |
+| `POST` | `/api/ai-setup` | JSON body: `system`, `message`, **`apiKey`** (required), optional `model`, `max_tokens` — forwards to Anthropic; returns messages API JSON |
 
 ---
 
@@ -108,6 +106,7 @@ Or use **Configure API key** in the app: the key is stored in **browser localSto
 | Issue | What to check |
 |-------|----------------|
 | AI errors / “Failed to fetch” | Open the app via **http://** from the dev server, not `file://`. |
+| `401` / “No API key” from AI | Use **🔑 API KEY** in the app — the server has no shared key. |
 | Setups “missing” after switching clients | Same origin: use the same host (`localhost` **or** `127.0.0.1`) and port. |
 | Import seems to do nothing | Use a file produced by **Export**, or JSON whose `data` object (or root) contains `f125_*` string keys. |
 | Phone can’t connect | Firewall allowing inbound TCP on `PORT`; phone on same LAN; use the LAN URL from the server log. |

@@ -172,9 +172,10 @@
   .modal-ok { flex: 1; background: var(--gold); color: #111; border: none; border-radius: 4px; padding: 10px; font-family: 'Orbitron', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; }
   .modal-ok:hover { background: #e0bc5a; }
   .modal-cancel { background: var(--surface3); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 10px 16px; font-family: 'Orbitron', monospace; font-size: 0.62rem; cursor: pointer; }
-  .api-key-bar { font-size: 0.78rem; color: var(--muted); line-height: 1.45; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; }
-  .api-key-bar button { background: none; border: none; color: var(--gold); font-family: 'Orbitron', monospace; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; padding: 0; text-decoration: underline; }
-  .api-key-bar button:hover { color: #e0bc5a; }
+  .ai-key-bar { font-size: 0.78rem; color: var(--muted); line-height: 1.45; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; }
+  .ai-key-bar button { background: none; border: none; color: var(--gold); font-family: 'Orbitron', monospace; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; padding: 0; text-decoration: underline; }
+  .ai-key-bar button:hover { color: #e0bc5a; }
+  .ai-key-bar a { color: var(--gold); }
   .modal-hint { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
   .modal-hint a { color: var(--gold); }
 </style>
@@ -489,7 +490,7 @@
       <div class="ai-badge">POWERED BY CLAUDE</div>
     </div>
     <div class="ai-body">
-      <div class="api-key-bar" id="apiKeyBar">Checking API key…</div>
+      <div class="ai-key-bar" id="aiKeyBar">Checking…</div>
       <div class="ai-mode-bar" role="group" aria-label="AI mode">
         <label><input type="radio" name="aiMode" value="ask" onchange="aiOnModeChange()"> ASK</label>
         <label><input type="radio" name="aiMode" value="setup" checked onchange="aiOnModeChange()"> CHANGE SETUP</label>
@@ -529,11 +530,11 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<!-- API key modal -->
+<!-- Your Anthropic key: this device only, never export/import, not stored on server disk -->
 <div class="modal-overlay" id="apiKeyModal" onclick="if(event.target===this)closeApiKeyModal()">
   <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-title">ANTHROPIC API KEY</div>
-    <p class="modal-hint">Used only from this browser / app to call Claude. Stored in local storage on this device. Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a></p>
+    <div class="modal-title">YOUR ANTHROPIC API KEY</div>
+    <p class="modal-hint">Each user uses their own key for Claude. Stored in <strong>this browser’s</strong> local storage only — not in setup backups, not on the server. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key</a></p>
     <div class="modal-field">
       <div class="modal-label">Secret key</div>
       <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false">
@@ -548,8 +549,8 @@
 </div>
 
 <script>
+/** Per-user key; excluded from EXPORT and IMPORT for safety */
 const LS_ANTHROPIC_KEY = 'f125_anthropic_api_key';
-let serverEnvKeyConfigured = false;
 
 function getStoredApiKey(){
   try { return (localStorage.getItem(LS_ANTHROPIC_KEY) || '').trim(); } catch (_) { return ''; }
@@ -565,7 +566,7 @@ function openApiKeyModal(){
   document.getElementById('apiKeyModal').classList.add('open');
   document.getElementById('apiKeyInput').value = '';
   document.getElementById('apiKeyModalNote').textContent = getStoredApiKey()
-    ? 'A key is already saved — paste a new one to replace it, or use Remove key.'
+    ? 'A key is already saved — paste a new one to replace it.'
     : '';
   setTimeout(() => document.getElementById('apiKeyInput').focus(), 80);
 }
@@ -591,21 +592,14 @@ function clearStoredApiKey(){
   showToast('API KEY REMOVED');
 }
 
-async function refreshApiKeyBar(){
-  const bar = document.getElementById('apiKeyBar');
+function refreshApiKeyBar(){
+  const bar = document.getElementById('aiKeyBar');
   if (!bar) return;
-  try {
-    const r = await fetch('/api/ai-status');
-    const j = await r.json();
-    serverEnvKeyConfigured = !!j.envKeyConfigured;
-  } catch (_) { serverEnvKeyConfigured = false; }
-  const local = getStoredApiKey();
-  if (local) {
-    bar.innerHTML = 'AI: <span style="color:var(--gold);font-weight:700">key saved in this app</span> (overrides .env) · <button type="button" onclick="openApiKeyModal()">Change</button> · <button type="button" onclick="clearStoredApiKey()">Remove</button>';
-  } else if (serverEnvKeyConfigured) {
-    bar.innerHTML = 'AI: <span style="color:var(--muted)">using server .env</span> · <button type="button" onclick="openApiKeyModal()">Use my own key</button>';
+  const sk = getStoredApiKey();
+  if (sk) {
+    bar.innerHTML = 'AI: <span style="color:var(--gold);font-weight:700">your key on this device</span> · <button type="button" onclick="openApiKeyModal()">Change</button> · <button type="button" onclick="clearStoredApiKey()">Remove</button>';
   } else {
-    bar.innerHTML = 'AI: <span style="color:var(--red)">no key</span> — configure below to use Claude. · <button type="button" onclick="openApiKeyModal()">Configure API key</button>';
+    bar.innerHTML = 'AI: <span style="color:var(--red)">no key</span> — add yours to use Claude. <button type="button" onclick="openApiKeyModal()">Add API key</button> · <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Anthropic console</a>';
   }
 }
 
@@ -972,6 +966,13 @@ async function sendAiRequest(){
   const text=input.value.trim();
   if(!text)return;
 
+  const sk = getStoredApiKey();
+  if (!sk) {
+    showToast('ADD YOUR API KEY FIRST');
+    openApiKeyModal();
+    return;
+  }
+
   const track=document.getElementById('trackSelect').value;
   const trackLabel=track ? document.getElementById('trackSelect').options[document.getElementById('trackSelect').selectedIndex].text : 'No track selected';
   const current=getSetup();
@@ -1030,9 +1031,7 @@ Only change the values that are relevant to the user's request. Keep unchanged v
   }
 
   try {
-    const apiPayload = { system: systemPrompt, message: text, max_tokens };
-    const sk = getStoredApiKey();
-    if (sk) apiPayload.apiKey = sk;
+    const apiPayload = { system: systemPrompt, message: text, max_tokens, apiKey: sk };
 
     const res = await fetch('/api/ai-setup', {
       method: 'POST',
