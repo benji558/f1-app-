@@ -55,6 +55,8 @@ From the same repo after `npm install`:
 
 End users run the installer or portable exe; optional **`.env` next to the `.exe`** can set `PORT` / `HOST` only (same idea as the web server — not for the Anthropic key).
 
+The **Anthropic API key** in the desktop app is stored in **Electron userData** (encrypted via OS **safeStorage** when the OS supports it), not only in `localStorage`, so it still works if the embedded server uses a **different port** than last time. Browser workflow is unchanged (`localStorage` only). **Setups / lap data** still live in `localStorage` per `localhost` port — if the port changes between launches, use a fixed **`PORT`** in `.env` next to the exe (or avoid running another copy on the default port).
+
 **Updates (packaged app):**
 
 - **Installed (NSIS) build:** On launch the app checks GitHub Releases; if a newer version is published it downloads in the background and prompts to restart (via **electron-updater** + `latest.yml` / installer assets on the release).

@@ -534,7 +534,7 @@
 <div class="modal-overlay" id="apiKeyModal" onclick="if(event.target===this)closeApiKeyModal()">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">YOUR ANTHROPIC API KEY</div>
-    <p class="modal-hint">Each user uses their own key for Claude. Stored in <strong>this browser’s</strong> local storage only — not in setup backups, not on the server. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key</a></p>
+    <p class="modal-hint" id="apiKeyStorageHint">Each user uses their own key for Claude. Stored in <strong>this browser’s</strong> local storage only — not in setup backups, not on the server. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key</a></p>
     <div class="modal-field">
       <div class="modal-label">Secret key</div>
       <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false">
@@ -553,12 +553,23 @@
 const LS_ANTHROPIC_KEY = 'f125_anthropic_api_key';
 
 function getStoredApiKey(){
+  if (typeof window.f1DesktopApiKey?.getSync === 'function') {
+    try {
+      return (window.f1DesktopApiKey.getSync() || '').trim();
+    } catch (_) {
+      return '';
+    }
+  }
   try { return (localStorage.getItem(LS_ANTHROPIC_KEY) || '').trim(); } catch (_) { return ''; }
 }
 
-function setStoredApiKey(v){
+async function setStoredApiKey(v){
   const t = String(v || '').trim();
   if (!t) return;
+  if (typeof window.f1DesktopApiKey?.set === 'function') {
+    await window.f1DesktopApiKey.set(t);
+    return;
+  }
   localStorage.setItem(LS_ANTHROPIC_KEY, t);
 }
 
@@ -575,21 +586,40 @@ function closeApiKeyModal(){
   document.getElementById('apiKeyModal').classList.remove('open');
 }
 
-function saveApiKeyFromModal(){
+async function saveApiKeyFromModal(){
   const v = document.getElementById('apiKeyInput').value.trim();
   if (!v) { showToast('PASTE YOUR API KEY'); return; }
   if (!v.startsWith('sk-ant') && !confirm('This does not look like a typical Anthropic key (sk-ant…). Save anyway?')) return;
-  setStoredApiKey(v);
+  await setStoredApiKey(v);
   refreshApiKeyBar();
   closeApiKeyModal();
   showToast('API KEY SAVED');
 }
 
-function clearStoredApiKey(){
-  localStorage.removeItem(LS_ANTHROPIC_KEY);
+async function clearStoredApiKey(){
+  if (typeof window.f1DesktopApiKey?.clear === 'function') {
+    await window.f1DesktopApiKey.clear();
+  } else {
+    localStorage.removeItem(LS_ANTHROPIC_KEY);
+  }
   refreshApiKeyBar();
   closeApiKeyModal();
   showToast('API KEY REMOVED');
+}
+
+/** One-time: old desktop builds used localhost localStorage; port changes broke it — copy into main-process store. */
+async function migrateDesktopApiKeyFromLocalStorage(){
+  if (typeof window.f1DesktopApiKey?.getSync !== 'function') return;
+  let k = '';
+  try { k = (window.f1DesktopApiKey.getSync() || '').trim(); } catch (_) {}
+  if (k) return;
+  try {
+    const legacy = (localStorage.getItem(LS_ANTHROPIC_KEY) || '').trim();
+    if (legacy) {
+      await window.f1DesktopApiKey.set(legacy);
+      localStorage.removeItem(LS_ANTHROPIC_KEY);
+    }
+  } catch (_) {}
 }
 
 function refreshApiKeyBar(){
@@ -1312,7 +1342,12 @@ function ltRenderStats() {
   document.getElementById('ltCount').textContent = session.laps.length;
 }
 
-applyBundledSetups().then(()=>{
+applyBundledSetups().then(async ()=>{
+  await migrateDesktopApiKeyFromLocalStorage();
+  const hint = document.getElementById('apiKeyStorageHint');
+  if (hint && typeof window.f1DesktopApiKey?.getSync === 'function') {
+    hint.innerHTML = 'Each user uses their own key for Claude. In the <strong>desktop app</strong> it is kept in <strong>app data</strong> on this PC (OS-protected when available) — not in setup backups, not on the server. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key</a>';
+  }
   ltInit();
   aiOnModeChange();
   refreshApiKeyBar();

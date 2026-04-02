@@ -3,7 +3,7 @@
   "description": "F1 25 setup manager with Matt212 baselines, lap tracker, and AI tuner",
   "author": "Local",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "commonjs",
   "main": "electron-main.js",
   "repository": {
@@ -38,6 +38,7 @@
     },
     "files": [
       "electron-main.js",
+      "electron-preload.js",
       "server.js",
       "f1_setup_manager.html",
       "manifest.json",

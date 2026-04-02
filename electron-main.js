@@ -1,4 +1,5 @@
-const { app, BrowserWindow, shell, Menu, dialog } = require('electron');
+const fs = require('fs');
+const { app, BrowserWindow, shell, Menu, dialog, ipcMain, safeStorage } = require('electron');
 const path = require('path');
 const semver = require('semver');
 const { startServer } = require('./server.js');
@@ -34,6 +35,65 @@ function getGithubRepoFromPackage() {
   return null;
 }
 
+function anthropicKeyFile() {
+  return path.join(app.getPath('userData'), 'anthropic-key.sec');
+}
+
+function loadAnthropicKey() {
+  const p = anthropicKeyFile();
+  if (!fs.existsSync(p)) return '';
+  const buf = fs.readFileSync(p);
+  if (!buf.length) return '';
+  try {
+    if (safeStorage.isEncryptionAvailable()) {
+      return safeStorage.decryptString(buf);
+    }
+  } catch (e) {
+    console.error('[f1] decrypt API key store', e);
+    return '';
+  }
+  return buf.toString('utf8');
+}
+
+function saveAnthropicKey(plain) {
+  const p = anthropicKeyFile();
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  if (safeStorage.isEncryptionAvailable()) {
+    fs.writeFileSync(p, safeStorage.encryptString(plain));
+  } else {
+    fs.writeFileSync(p, plain, 'utf8');
+  }
+}
+
+function clearAnthropicKeyFile() {
+  try {
+    fs.unlinkSync(anthropicKeyFile());
+  } catch (_) {
+    /* ignore */
+  }
+}
+
+function registerApiKeyIpc() {
+  ipcMain.on('f1-api-key-get-sync', (event) => {
+    try {
+      event.returnValue = loadAnthropicKey();
+    } catch (e) {
+      console.error(e);
+      event.returnValue = '';
+    }
+  });
+  ipcMain.handle('f1-api-key-set', async (_e, key) => {
+    const t = String(key || '')
+      .trim()
+      .slice(0, 4096);
+    if (!t) return;
+    saveAnthropicKey(t);
+  });
+  ipcMain.handle('f1-api-key-clear', async () => {
+    clearAnthropicKeyFile();
+  });
+}
+
 function ensureServer() {
   if (!serverReady) {
     serverReady = startServer({
@@ -54,6 +114,7 @@ async function createWindow() {
     width: 1280,
     height: 800,
     webPreferences: {
+      preload: path.join(__dirname, 'electron-preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -234,6 +295,7 @@ function initUpdates() {
 app
   .whenReady()
   .then(async () => {
+    registerApiKeyIpc();
     await createWindow();
     initUpdates();
   })
