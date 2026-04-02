@@ -1,5 +1,6 @@
 const path = require('path');
 const os = require('os');
+const http = require('http');
 const express = require('express');
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
@@ -16,8 +17,10 @@ function lanV4Urls(port) {
   return urls;
 }
 
+const DEFAULT_PORT_FALLBACK_TRIES = 32;
+
 /**
- * @param {{ rootDir?: string, envPath?: string, port?: number, host?: string, quiet?: boolean }} opts
+ * @param {{ rootDir?: string, envPath?: string, port?: number, host?: string, quiet?: boolean, portFallbackTries?: number }} opts
  * @returns {Promise<{ port: number, close: () => Promise<void> }>}
  */
 function startServer(opts = {}) {
@@ -27,9 +30,13 @@ function startServer(opts = {}) {
     : path.join(rootDir, '.env');
   require('dotenv').config({ path: envPath, override: true });
 
-  const PORT = Number(opts.port ?? process.env.PORT) || 3456;
+  const firstPort = Number(opts.port ?? process.env.PORT) || 3456;
   const HOST = opts.host ?? (process.env.HOST || '0.0.0.0');
   const quiet = Boolean(opts.quiet);
+  const maxTries =
+    opts.portFallbackTries !== undefined
+      ? Math.max(1, Number(opts.portFallbackTries) || 1)
+      : DEFAULT_PORT_FALLBACK_TRIES;
 
   const ex = express();
   ex.use(express.json({ limit: '200kb' }));
@@ -91,24 +98,45 @@ function startServer(opts = {}) {
     }
   });
 
-  return new Promise((resolve, reject) => {
-    const srv = ex.listen(PORT, HOST, () => {
-      if (!quiet) {
-        console.log(`F1 Setup Manager: http://localhost:${PORT}`);
-        const lan = lanV4Urls(PORT);
-        if (lan.length) console.log('Phone (same Wi‑Fi): open one of →', lan.join('  |  '));
-        console.log(`Loading .env from: ${envPath}`);
+  const srv = http.createServer(ex);
+
+  function listenFrom(port, triesLeft) {
+    return new Promise((resolve, reject) => {
+      srv.once('error', onErr);
+      srv.listen(port, HOST, onListening);
+
+      function onListening() {
+        srv.off('error', onErr);
+        if (!quiet) {
+          if (port !== firstPort) {
+            console.warn(`F1 Setup Manager: port ${firstPort} in use — bound to ${port}`);
+          }
+          console.log(`F1 Setup Manager: http://localhost:${port}`);
+          const lan = lanV4Urls(port);
+          if (lan.length) console.log('Phone (same Wi‑Fi): open one of →', lan.join('  |  '));
+          console.log(`Loading .env from: ${envPath}`);
+        }
+        resolve({
+          port,
+          close: () =>
+            new Promise((res, rej) => {
+              srv.close((err) => (err ? rej(err) : res()));
+            }),
+        });
       }
-      resolve({
-        port: PORT,
-        close: () =>
-          new Promise((res, rej) => {
-            srv.close((err) => (err ? rej(err) : res()));
-          }),
-      });
+
+      function onErr(err) {
+        srv.off('error', onErr);
+        if (err.code === 'EADDRINUSE' && triesLeft > 1) {
+          listenFrom(port + 1, triesLeft - 1).then(resolve, reject);
+          return;
+        }
+        reject(err);
+      }
     });
-    srv.on('error', reject);
-  });
+  }
+
+  return listenFrom(firstPort, maxTries);
 }
 
 if (require.main === module) {

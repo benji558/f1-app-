@@ -5,13 +5,79 @@
   "private": true,
   "version": "1.0.0",
   "type": "commonjs",
-  "main": "server.js",
+  "main": "electron-main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benji558/f1-app-.git"
+  },
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "electron": "electron .",
+    "dist:clean-unpacked": "node scripts/rm-win-unpacked.js",
+    "pack": "npm run dist:clean-unpacked && electron-builder --dir",
+    "dist": "npm run dist:clean-unpacked && electron-builder --win portable --x64",
+    "dist:installer": "npm run dist:clean-unpacked && electron-builder --win nsis --x64",
+    "dist:publish": "npm run dist:clean-unpacked && node scripts/dist-publish.js"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "electron-updater": "^6.8.3",
+    "express": "^4.21.2",
+    "semver": "^7.7.4"
+  },
+  "devDependencies": {
+    "electron": "^34.5.8",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.local.f1-setup-manager",
+    "productName": "F1 Setup Manager",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron-main.js",
+      "server.js",
+      "f1_setup_manager.html",
+      "manifest.json",
+      "bundled-setups.json",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": ".env.example",
+        "to": ".env.example"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "benji558",
+        "repo": "f1-app-"
+      }
+    ]
   }
 }

@@ -24,8 +24,8 @@ The app does **not** talk to the game executable; you copy values into F1 25 you
 
 ## Requirements
 
-- **Node.js** 18+ (uses native `fetch` in `server.js`)
-- npm
+- **Web workflow:** **Node.js** 18+ (uses native `fetch` in `server.js`) and npm.
+- **Windows desktop build:** Node only on the **machine that runs `npm run dist`**; the shipped `.exe` bundles Electron (Chromium + Node) — end users do **not** install Node.
 - For AI features: an [Anthropic API key](https://console.anthropic.com/settings/keys)
 
 ---
@@ -44,13 +44,49 @@ Open **http://localhost:3456** (or whatever port the terminal prints).
 - The server listens on **all interfaces** (`0.0.0.0`) by default, so other devices on the same Wi‑Fi can open the URL shown in the console (e.g. `http://192.168.x.x:3456`).
 - **Always use the same host** in the address bar (`localhost` vs `127.0.0.1` are different sites for `localStorage` — pick one and stick to it).
 
+### Desktop (Electron)
+
+From the same repo after `npm install`:
+
+- **`npm run electron`** — opens a window that loads **`http://localhost:<port>/`** (same `localStorage` origin as using the browser on `localhost`).
+- **Build on Windows** (artifacts under `release/`, gitignored):
+  - **`npm run dist`** — portable x64 `.exe`
+  - **`npm run dist:installer`** — NSIS installer x64
+
+End users run the installer or portable exe; optional **`.env` next to the `.exe`** can set `PORT` / `HOST` only (same idea as the web server — not for the Anthropic key).
+
+**Updates (packaged app):**
+
+- **Installed (NSIS) build:** On launch the app checks GitHub Releases; if a newer version is published it downloads in the background and prompts to restart (via **electron-updater** + `latest.yml` / installer assets on the release).
+- **Portable `.exe`:** Same check uses the GitHub API; if a newer tag exists you get a dialog with a link to the release page (portable builds are not auto-patched in place).
+- **Help → Check for Updates…** runs the same logic on demand.
+
+**Publishing to GitHub Releases**
+
+1. **Recommended — GitHub Actions (no personal token):** After merging changes, bump **`"version"`** in `package.json`, commit, push, then either:
+   - **Tag push:** `git tag v1.0.1 && git push origin v1.0.1` (tag should match the new version, e.g. `v` + semver), **or**
+   - **Manual run:** GitHub → **Actions** → workflow **Release** → **Run workflow**.
+
+   The job builds on **windows-latest** and uploads the same artifacts as local `dist` + `latest.yml` for auto-update. One-time repo setting: **Settings → Actions → General → Workflow permissions → Read and write permissions** (otherwise uploads get 403).
+
+2. **Local machine:** If you prefer building on your PC, **quit the desktop app** first (avoids `EBUSY` on `release\win-unpacked`), then:
+
+```bash
+set GH_TOKEN=ghp_...
+npm run dist:publish
+```
+
+(PowerShell: `$env:GH_TOKEN='ghp_...'`, or put **`GH_TOKEN=...`** in local **`.env`** — `scripts/dist-publish.js` loads it.)
+
+Releases target the repo in `package.json` → `build.publish` (see [benji558/f1-app-](https://github.com/benji558/f1-app-)); change `owner` / `repo` there if needed.
+
 ---
 
 ## Configuration
 
 ### Port and host
 
-Optional environment variables (or entries in `.env`):
+Optional environment variables (or entries in `.env` next to `server.js` when using **`npm start`**, or next to the **desktop `.exe`** when using the packaged app):
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
@@ -84,6 +120,7 @@ Optional environment variables (or entries in `.env`):
 
 | File | Role |
 |------|------|
+| `electron-main.js` | Electron entry: starts embedded Express from `server.js`, opens `BrowserWindow` on `http://localhost:…` |
 | `server.js` | Express static server, `/api/ai-setup` proxy to Anthropic (uses caller’s `apiKey` in JSON body) |
 | `f1_setup_manager.html` | Single-page UI (HTML + CSS + JS) |
 | `bundled-setups.json` | Optional seed data: `{ "data": { "f125_…": "…" } }` (tracked; empty by default) |

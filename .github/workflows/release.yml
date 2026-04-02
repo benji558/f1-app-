@@ -1,0 +1,42 @@
+# Builds Windows portable + NSIS and uploads to GitHub Releases (same as local dist:publish).
+# Uses GITHUB_TOKEN — no personal GH_TOKEN on your PC.
+#
+# Before triggering:
+#   1. Bump "version" in package.json (and run npm install if you change deps).
+#   2. Commit and push to main.
+#   3. Either push tag: git tag v1.0.1 && git push origin v1.0.1
+#      or: Actions → Release → Run workflow (workflow_dispatch).
+#
+# Repo setting: Settings → Actions → General → Workflow permissions → Read and write permissions
+# (needed so the token can upload release assets).
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run dist:clean-unpacked
+
+      - name: Build and publish to GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win --x64 --publish always
